@@ -3,197 +3,49 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Defterdar STK Yönetim</title>
-  <link rel="icon" type="image/png" href="icder.png"/>
-  <link rel="stylesheet" href="fa/css/all.min.css"/>
+  <meta name="theme-color" content="#08110d"/>
+  <title>Defterdar | Giriş</title>
+  <link rel="icon" type="image/png" href="/icder.png"/>
+  <link rel="stylesheet" href="/fa/css/all.min.css"/>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at top left,#0f172a 0%,#020617 45%,#050816 100%);color:#f8fafc;overflow:hidden;}
-    body::before{content:'';position:fixed;inset:-20%;background:radial-gradient(circle,rgba(59,130,246,0.18),transparent 38%),radial-gradient(circle at 80% 20%,rgba(168,85,247,0.2),transparent 32%),radial-gradient(circle at 20% 80%,rgba(16,185,129,0.16),transparent 30%);filter:blur(50px);animation:float 10s ease-in-out infinite alternate;pointer-events:none}
-    .shell{width:min(1180px,100%);display:grid;grid-template-columns:1.12fr .88fr;gap:24px;align-items:center;position:relative;z-index:1}
-    .hero,.card{background:rgba(2,8,23,0.82);border:1px solid rgba(148,163,184,.16);backdrop-filter:blur(24px);box-shadow:0 25px 80px rgba(0,0,0,.35)}
-    .hero{border-radius:30px;padding:34px;position:relative;overflow:hidden}
-    .hero::after{content:'';position:absolute;inset:auto -20px -20px auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,0.24),transparent 70%)}
-    .brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-    .brand .icon{width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;box-shadow:0 16px 32px rgba(59,130,246,.25)}
-    .brand .icon i{font-size:24px;color:#fff}
-    .brand h1{font-size:24px;font-weight:800;letter-spacing:.3px}
-    .brand h1 span{color:#7dd3fc}
-    .hero h2{font-size:30px;line-height:1.2;margin:10px 0 12px;font-weight:800}
-    .hero p{color:#94a3b8;font-size:15px;line-height:1.7;max-width:620px}
-    .actions{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0 20px}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border-radius:999px;border:none;font-weight:700;cursor:pointer;text-decoration:none;font-size:14px;transition:transform .16s ease, box-shadow .16s ease, background .2s ease}
-    .btn:hover{transform:translateY(-2px)}
-    .btn-primary{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;box-shadow:0 14px 28px rgba(59,130,246,.3)}
-    .btn-secondary{background:rgba(148,163,184,.12);color:#e2e8f0;border:1px solid rgba(148,163,184,.18)}
-    .feature-list{display:grid;gap:10px;margin-top:18px}
-    .feature{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;color:#cbd5e1;font-size:14px}
-    .feature i{color:#34d399;margin-top:2px}
-    .card{border-radius:30px;padding:28px;animation:rise .6s ease both}
-    .card h3{font-size:20px;margin-bottom:6px}
-    .card p{font-size:13px;color:#94a3b8;margin-bottom:16px}
-    .tab-row{display:flex;gap:8px;margin-bottom:16px}
-    .tab{flex:1;padding:10px;border-radius:12px;border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.03);color:#94a3b8;font-weight:700;cursor:pointer;text-align:center;transition:all .2s ease}
-    .tab.active{background:rgba(79,126,248,.16);color:#7dd3fc;border-color:rgba(79,126,248,.28)}
-    .form-group{margin-bottom:12px}
-    .form-group label{display:block;font-size:12px;color:#94a3b8;font-weight:600;margin-bottom:6px}
-    .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.2);background:rgba(255,255,255,.04);color:#f8fafc;outline:none}
-    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#4f7ef8;box-shadow:0 0 0 3px rgba(79,126,248,.16)}
-    .msg{padding:10px 12px;border-radius:12px;font-size:13px;margin-bottom:12px;display:none}
-    .msg.error{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.24)}
-    .msg.success{background:rgba(16,185,129,.12);color:#bbf7d0;border:1px solid rgba(16,185,129,.24)}
-    .tiny{margin-top:14px;font-size:12px;color:#64748b;line-height:1.6}
-    @keyframes float{from{transform:translate3d(0,0,0)}to{transform:translate3d(20px,-20px,0)}}
-    @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-    @media (max-width: 900px){.shell{grid-template-columns:1fr}.hero{order:2}.card{order:1}}
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+    :root{--ink:#eaf4ee;--muted:#98ada1;--line:rgba(184,220,196,.16);--panel:rgba(11,28,20,.78);--green:#42d392;--gold:#d8b36a;--danger:#ff9f9f}
+    *{box-sizing:border-box;margin:0;padding:0}body{min-height:100vh;font-family:'DM Sans',sans-serif;color:var(--ink);background:#07110c;overflow-x:hidden}
+    body:before{content:'';position:fixed;inset:0;pointer-events:none;background:linear-gradient(118deg,rgba(9,31,20,.96),rgba(6,16,12,.76)),url('/icder.png') center/cover;opacity:.22}
+    .page{position:relative;min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(390px,.9fr);max-width:1380px;margin:auto;padding:34px clamp(24px,5vw,76px);gap:clamp(42px,8vw,130px);align-items:center}
+    .story{padding:18px 0;animation:enter .7s ease both}.brand{display:flex;align-items:center;gap:15px;margin-bottom:clamp(60px,13vh,150px)}
+    .brand img{width:62px;height:62px;object-fit:contain;border-radius:18px;background:rgba(255,255,255,.94);padding:7px;box-shadow:0 12px 30px rgba(0,0,0,.25)}.brand-fallback{display:none;width:62px;height:62px;border-radius:18px;align-items:center;justify-content:center;background:#17452e;color:var(--green);font-size:28px}.brand strong{display:block;font-size:18px;letter-spacing:.04em}.brand span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+    .eyebrow{display:flex;align-items:center;gap:10px;color:var(--gold);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:18px}.eyebrow:before{content:'';width:34px;height:1px;background:var(--gold)}h1{font-family:'Playfair Display',serif;font-size:clamp(42px,5.5vw,78px);line-height:1.04;max-width:680px;letter-spacing:-.02em}h1 em{color:var(--green);font-style:normal}.story-copy{max-width:550px;margin-top:24px;color:var(--muted);font-size:16px;line-height:1.8}.trust{display:flex;gap:24px;margin-top:34px;color:#c1d5c8;font-size:13px}.trust span{display:flex;align-items:center;gap:8px}.trust i{color:var(--green)}
+    .auth-card{width:100%;max-width:500px;margin-left:auto;padding:34px;border:1px solid var(--line);border-radius:24px;background:var(--panel);box-shadow:0 26px 80px rgba(0,0,0,.28);backdrop-filter:blur(18px);animation:enter .7s .12s ease both}.card-head{margin-bottom:24px}.card-head h2{font-family:'Playfair Display',serif;font-size:31px}.card-head p{color:var(--muted);font-size:14px;margin-top:8px;line-height:1.5}
+    .switch{display:grid;grid-template-columns:1fr 1fr;padding:4px;background:rgba(255,255,255,.05);border-radius:12px;margin-bottom:24px}.switch a{padding:11px;text-align:center;border-radius:9px;color:var(--muted);font-size:13px;font-weight:700;text-decoration:none}.switch a.active{background:#1a3c2a;color:var(--ink);box-shadow:0 4px 12px rgba(0,0,0,.16)}
+    .field{margin-bottom:15px}.field label{display:block;color:#b7cabe;font-size:12px;font-weight:700;margin-bottom:7px}.field input,.field select{width:100%;height:48px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.16);color:var(--ink);padding:0 14px;font:inherit;outline:none}.field input:focus,.field select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(66,211,146,.12)}.field select option{background:#10251a}.button{width:100%;height:50px;margin-top:8px;border:0;border-radius:10px;background:var(--green);color:#062012;font:700 14px 'DM Sans',sans-serif;cursor:pointer;transition:transform .2s,box-shadow .2s}.button:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(66,211,146,.2)}.button:disabled{opacity:.55;cursor:wait;transform:none}
+    .message{display:none;border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.4;margin-bottom:16px}.message.error{display:block;color:var(--danger);background:rgba(255,90,90,.1);border:1px solid rgba(255,90,90,.2)}.message.success{display:block;color:#baf4d2;background:rgba(66,211,146,.1);border:1px solid rgba(66,211,146,.2)}.fine-print{color:#71877a;font-size:11px;line-height:1.6;margin-top:18px}.back{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;text-decoration:none;margin-top:20px}.back:hover{color:var(--ink)}
+    @keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}@media(max-width:850px){.page{display:block;padding:24px 18px}.story{padding-top:12px}.brand{margin-bottom:54px}.story-copy{font-size:14px}.trust{margin-bottom:36px;gap:14px;flex-wrap:wrap}.auth-card{margin:0 auto;padding:26px 21px}.story h1{font-size:47px}}@media(max-width:430px){.grid{display:block}.grid .field{margin-bottom:15px}.trust{font-size:12px}}
   </style>
 </head>
 <body>
-<div class="shell">
-  <div class="hero">
-    <div class="brand">
-      <div class="icon"><i class="fa-solid fa-handshake"></i></div>
-      <div>
-        <h1>Defterdar <span>STK</span></h1>
-        <div style="font-size:12px;color:#64748b">Kurban, bağış, yardım ve kurumsal takip tek panelde</div>
-      </div>
-    </div>
-    <h2>Yönetim deneyimini lüks, koyu ve akıcı hale getiriyoruz.</h2>
-    <p>Demo hesabı oluşturabilir, mevcut hesabınızla giriş yapabilir ve yönetim paneline doğrudan erişebilirsiniz. Arayüz, kurumsal bir sistem hissi verecek şekilde yeniden tasarlandı.</p>
-    <div class="actions">
-      <button class="btn btn-primary" onclick="goDemo()"><i class="fa-solid fa-rocket"></i> Demo Başlat</button>
-      <button class="btn btn-secondary" onclick="showTab('login')"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</button>
-    </div>
-    <div class="feature-list">
-      <div class="feature"><i class="fa-solid fa-circle-check"></i><div>Kurumsal organizasyon ve kurban takibi</div></div>
-      <div class="feature"><i class="fa-solid fa-circle-check"></i><div>Bağışçı, kasa ve personel yönetimi</div></div>
-      <div class="feature"><i class="fa-solid fa-circle-check"></i><div>Su kuyusu projeleri, toplam maliyet ve bağış canlı izleme</div></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3 id="card-title">Hesabınıza giriş yapın</h3>
-    <p id="card-subtitle">Mevcut hesabınızla devam edin ya da demo hesabı oluşturun.</p>
-    <div class="tab-row">
-      <div class="tab active" id="tab-login" onclick="showTab('login')">Giriş</div>
-      <div class="tab" id="tab-register" onclick="showTab('register')">Demo / Kayıt</div>
-    </div>
-    <div id="msg-error" class="msg error"></div>
-    <div id="msg-success" class="msg success"></div>
-
-    <div id="form-login">
-      <div class="form-group">
-        <label>Kullanıcı adı</label>
-        <input id="g-kullanici" type="text" placeholder="kullanici_adiniz" autocomplete="username"/>
-      </div>
-      <div class="form-group">
-        <label>Şifre</label>
-        <input id="g-sifre" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') girisYap()"/>
-      </div>
-      <button class="btn btn-primary" style="width:100%" onclick="girisYap()"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</button>
-    </div>
-
-    <div id="form-register" style="display:none">
-      <div class="form-group">
-        <label>Kuruluş Tipi</label>
-        <select id="k-kurulus-tipi">
-          <option value="">Seçin...</option>
-          <option value="hayirsever">Hayır Kurumu</option>
-          <option value="bagis-dernegi">Bağış Derneği</option>
-          <option value="sosyal-kuruluslar">Sosyal Kuruluşlar</option>
-          <option value="sirket">Şirket</option>
-          <option value="kisisel">Kişisel</option>
-          <option value="diger">Diğer</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Aktivasyon Kodu (Zorunlu Değil)</label>
-        <input id="k-aktivasyon-kodu" type="text" placeholder="Varsa aktivasyon kodunuzu giriniz" autocomplete="off"/>
-      </div>
-      <div class="form-group">
-        <label>Kullanıcı adı</label>
-        <input id="k-kullanici" type="text" placeholder="demo_kurulus" autocomplete="username"/>
-      </div>
-      <div class="form-group">
-        <label>E-posta</label>
-        <input id="k-email" type="email" placeholder="ornek@mail.com" autocomplete="email"/>
-      </div>
-      <div class="form-group">
-        <label>Şifre</label>
-        <input id="k-sifre" type="password" placeholder="••••••••" autocomplete="new-password" onkeydown="if(event.key==='Enter') kayitOl()"/>
-      </div>
-      <button class="btn btn-primary" style="width:100%" onclick="kayitOl()"><i class="fa-solid fa-user-plus"></i> Demo Hesabı Oluştur</button>
-    </div>
-
-    <div class="tiny">Demo hesabı açtıktan sonra sistemin sınırlı modüllerini deneyebilir, daha sonra Pro plan ile genişletme yapabilirsiniz.</div>
-  </div>
-</div>
-
-<script>
-function showTab(tab) {
-  const loginTab = document.getElementById('tab-login');
-  const registerTab = document.getElementById('tab-register');
-  const loginForm = document.getElementById('form-login');
-  const registerForm = document.getElementById('form-register');
-  const title = document.getElementById('card-title');
-  const subtitle = document.getElementById('card-subtitle');
-  loginTab.classList.toggle('active', tab==='login');
-  registerTab.classList.toggle('active', tab==='register');
-  loginForm.style.display = tab==='login' ? '' : 'none';
-  registerForm.style.display = tab==='register' ? '' : 'none';
-  title.textContent = tab==='register' ? 'Demo hesabı oluştur' : 'Hesabınıza giriş yapın';
-  subtitle.textContent = tab==='register' ? 'Hızlı başlangıç için demo hesabı açın.' : 'Mevcut hesabınızla devam edin.';
-  clearMsg();
-}
-function goDemo() { showTab('register'); }
-function showError(msg) {
-  const el = document.getElementById('msg-error');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('msg-success').style.display = 'none';
-}
-function showSuccess(msg) {
-  const el = document.getElementById('msg-success');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('msg-error').style.display = 'none';
-}
-function clearMsg() {
-  document.getElementById('msg-error').style.display = 'none';
-  document.getElementById('msg-success').style.display = 'none';
-}
-async function girisYap() {
-  const kullanici_adi = document.getElementById('g-kullanici').value.trim();
-  const sifre = document.getElementById('g-sifre').value;
-  if (!kullanici_adi || !sifre) return showError('Tüm alanları doldurun.');
-  try {
-    const r = await fetch('/api/auth/giris', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ kullanici_adi, sifre }) });
-    const d = await r.json();
-    if (!r.ok) return showError(d.hata || 'Giriş yapılamadı.');
-    localStorage.setItem('defterdar-userId', d.userId);
-    localStorage.setItem('defterdar-userName', d.kullanici_adi);
-    showSuccess('Giriş başarılı, yönlendiriliyor...');
-    setTimeout(() => window.location.replace('/'), 700);
-  } catch (e) { showError('Bağlantı hatası.'); }
-}
-async function kayitOl() {
-  const kullanici_adi = document.getElementById('k-kullanici').value.trim();
-  const email = document.getElementById('k-email').value.trim();
-  const kurulus_tipi = document.getElementById('k-kurulus-tipi').value;
-  const aktivasyon_kodu = document.getElementById('k-aktivasyon-kodu').value.trim();
-  const sifre = document.getElementById('k-sifre').value;
-  if (!kullanici_adi || !email || !sifre || !kurulus_tipi) return showError('Tüm alanları doldurun.');
-  try {
-    const r = await fetch('/api/auth/kayit', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ kullanici_adi, email, sifre, kurulus_tipi, aktivasyon_kodu }) });
-    const d = await r.json();
-    if (!r.ok) return showError(d.hata || 'Kayıt yapılamadı.');
-    localStorage.setItem('defterdar-userId', d.userId);
-    localStorage.setItem('defterdar-userName', d.kullanici_adi);
-    showSuccess('Hesap oluşturuldu, yönlendiriliyor...');
-    setTimeout(() => window.location.replace('/'), 700);
-  } catch (e) { showError('Bağlantı hatası.'); }
-}
-if (window.location.hash === '#kayit' || window.location.hash === '#demo') showTab('register');
-fetch('/api/auth/durum', {credentials:'include'}).then(r => r.json()).then(d => { if (d.girisYapildi) window.location.replace('/'); });
-</script>
+  <main class="page">
+    <section class="story">
+      <div class="brand"><img id="brand-logo" src="/icder.png" alt="Defterdar logosu" onerror="this.style.display='none';document.getElementById('brand-fallback').style.display='flex'"/><div id="brand-fallback" class="brand-fallback"><i class="fa-solid fa-mosque"></i></div><div><strong>Defterdar STK</strong><span>Manevi hizmetler yönetim sistemi</span></div></div>
+      <div class="eyebrow">Kurumsal yönetim</div><h1>İyiliği <em>düzenli</em>, hizmeti görünür kılın.</h1><p class="story-copy">Bağıştan kurbana, projelerden saha operasyonlarına kadar derneğinizin bütün işlerini tek ve güvenli bir çalışma alanında yönetin.</p>
+      <div class="trust"><span><i class="fa-solid fa-shield-halved"></i> Güvenli oturum</span><span><i class="fa-solid fa-layer-group"></i> Tek merkezden yönetim</span></div>
+    </section>
+    <section class="auth-card" aria-labelledby="auth-title">
+      <div class="card-head"><h2 id="auth-title">Hesabınıza hoş geldiniz</h2><p id="auth-subtitle">Yönetim panelinize devam etmek için giriş yapın.</p></div>
+      <nav class="switch" aria-label="Hesap işlemleri"><a id="login-link" href="/giris">Giriş yap</a><a id="register-link" href="/kayit">Kayıt ol</a></nav><div id="message" class="message"></div>
+      <form id="auth-form" novalidate>
+        <div id="register-fields" style="display:none"><div class="field"><label for="kurulus">Kuruluş türü</label><select id="kurulus"><option value="">Seçin</option><option value="stk">STK / Dernek</option><option value="hayirsever">Hayır kurumu</option><option value="sirket">Şirket</option><option value="kisisel">Kişisel</option><option value="diger">Diğer</option></select></div><div class="field"><label for="aktivasyon">Aktivasyon kodu <span style="font-weight:400;color:var(--muted)">(opsiyonel)</span></label><input id="aktivasyon" type="text" autocomplete="off" placeholder="Varsa kodunuzu girin"/></div></div>
+        <div class="field"><label for="kullanici">Kullanıcı adı</label><input id="kullanici" type="text" autocomplete="username" placeholder="kullanici_adiniz" required/></div><div id="email-field" class="field" style="display:none"><label for="email">E-posta</label><input id="email" type="email" autocomplete="email" placeholder="ornek@mail.com"/></div><div class="field"><label for="sifre">Şifre</label><input id="sifre" type="password" autocomplete="current-password" placeholder="Şifrenizi girin" required/></div>
+        <button id="submit" class="button" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Giriş yap</button>
+      </form><p class="fine-print">Hesabınızla devam ederek kullanım koşullarını ve kurumunuzun veri güvenliği politikasını kabul etmiş olursunuz.</p><a class="back" href="/"><i class="fa-solid fa-arrow-left"></i> Ana sayfaya dön</a>
+    </section>
+  </main>
+  <script>
+    const isRegister = location.pathname === '/kayit'; const $ = id => document.getElementById(id);
+    function setMode(register){$('register-fields').style.display=register?'':'none';$('email-field').style.display=register?'':'none';$('email').required=register;$('kurulus').required=register;$('login-link').classList.toggle('active',!register);$('register-link').classList.toggle('active',register);$('auth-title').textContent=register?'Kuruluşunuzu oluşturun':'Hesabınıza hoş geldiniz';$('auth-subtitle').textContent=register?'Defterdar ile düzenli ve güvenli bir başlangıç yapın.':'Yönetim panelinize devam etmek için giriş yapın.';$('submit').innerHTML=register?'<i class="fa-solid fa-user-plus"></i> Kayıt ol':'<i class="fa-solid fa-right-to-bracket"></i> Giriş yap';$('sifre').autocomplete=register?'new-password':'current-password'}
+    function message(text,type){const el=$('message');el.textContent=text;el.className='message '+type}
+    $('auth-form').addEventListener('submit',async event=>{event.preventDefault();const button=$('submit');button.disabled=true;const payload={kullanici_adi:$('kullanici').value.trim(),sifre:$('sifre').value};if(isRegister)Object.assign(payload,{email:$('email').value.trim(),kurulus_tipi:$('kurulus').value,aktivasyon_kodu:$('aktivasyon').value.trim()});if(!payload.kullanici_adi||!payload.sifre||(isRegister&&(!payload.email||!payload.kurulus_tipi))){message('Lütfen zorunlu alanları doldurun.','error');button.disabled=false;return}try{const response=await fetch('/api/auth/'+(isRegister?'kayit':'giris'),{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.hata||'İşlem tamamlanamadı.');localStorage.setItem('defterdar-userId',data.userId);localStorage.setItem('defterdar-userName',data.kullanici_adi||payload.kullanici_adi);message(isRegister?'Hesabınız oluşturuldu. Panel açılıyor...':'Giriş başarılı. Panel açılıyor...','success');setTimeout(()=>location.replace('/'),500)}catch(error){message(error.message||'Bağlantı hatası oluştu.','error');button.disabled=false}});
+    setMode(isRegister);fetch('/api/admin/giris-logosu',{credentials:'include',cache:'no-store'}).then(r=>r.json()).then(data=>{if(data.logo_data)$('brand-logo').src=data.logo_data}).catch(()=>{});fetch('/api/auth/durum',{credentials:'include'}).then(r=>r.json()).then(data=>{if(data.girisYapildi)location.replace('/')}).catch(()=>{});
+  </script>
 </body>
 </html>

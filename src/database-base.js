@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const { createDbManager } = require('./database-core');
+const { UHREVI_SCHEMA } = require('./uhrevi-schema');
 
 class DbWrapper {
   constructor(manager) {
@@ -407,6 +408,10 @@ async function getDb(config = {}) {
     } catch (e) {
       // ignore schema errors during bootstrap
     }
+  });
+
+  UHREVI_SCHEMA.split(';').map(s => s.trim()).filter(Boolean).forEach(stmt => {
+    try { wrapper.exec(stmt); } catch (e) {}
   });
 
   MIGRATIONS.forEach(stmt => {

@@ -99,6 +99,7 @@ async function sistemModuApiBlokaj(req, res, next) {
 app.use('/api', sistemModuApiBlokaj);
 
 app.use('/api', require('./src/routes'));
+app.use('/api/uhrevi', require('./src/uhrevi-routes'));
 app.use('/api/medya', require('./src/cloudinary'));
 app.use('/api/destek', require('./src/destek-routes'));
 app.use('/api', require('./src/sms-routes'));
@@ -107,8 +108,8 @@ app.get('/', (req, res) => {
   return res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/giris', (req, res) => res.redirect('/'));
-app.get('/kayit', (req, res) => res.redirect('/'));
+app.get('/giris', (req, res) => res.sendFile(path.join(__dirname, 'public', 'giris.html')));
+app.get('/kayit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'giris.html')));
 app.get('/icder-giris', (req, res) => res.redirect('/'));
 app.get('/admin-giris', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-giris.html')));
 app.get('/dypadmin', (req, res) => {
