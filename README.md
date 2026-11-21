@@ -31,6 +31,12 @@ Railway'e kurulum:
 
 Yedekleme PostgreSQL'de `.json.gz` biçimindedir: `/sadmin → Yedekler` bölümünden tam yedek indirilip aynı ekrandan anında geri yüklenebilir. Kurum bazlı yedekler iki motorda da aynı biçimdedir, yani SQLite'tan PostgreSQL'e taşınırken her kurumun yedeği yeni sunucuya yüklenebilir.
 
+### Açılışta şema onarımı
+
+Uygulama her açılışta eksik tabloları oluşturur, eski bir kurulumdan kalmış tablolarda eksik kolonları ve benzersizlik kısıtlarını tamamlar; yaptığı değişiklikleri `[ŞEMA]` satırlarıyla günlüğe yazar. Bu yüzden eski bir veritabanının üzerine yeni sürüm kurulabilir.
+
+Yine de açılışta `Şema uygulanamadı (tablo_adı): ...` hatası görürseniz, hata hangi tabloda olduğunu söyler. Veritabanı boşsa en temizi sıfırdan başlamaktır: Railway'de Postgres servisi → **Data** sekmesinden veritabanını silip yeniden oluşturun ya da sorgu ekranında `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` çalıştırın, sonra Defterdar servisini yeniden başlatın.
+
 ## Hesap türleri ve akıllı menü
 
 Kayıtta hesap türü (STK, şirket, muhasebe bürosu, esnaf) ve faaliyet alanları seçilir. Her modülün puanı:

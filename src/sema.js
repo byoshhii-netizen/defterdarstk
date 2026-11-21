@@ -235,8 +235,135 @@ CREATE TABLE IF NOT EXISTS medya (
 );
 `;
 
+// ─── Şema uygulama ve onarım ───────────────────────────────────────────────
+// İfadeler tek tek çalıştırılır: bir hata olursa hangi tablo olduğu anlaşılır ve
+// başarılı olanlar geri alınmaz. Tablolar oluşturulduktan sonra eski kurulumlardan
+// kalmış olabilecek eksik kolonlar tamamlanır, indeksler en son eklenir.
+function ifadeleriAyir(sema) {
+  const parcalar = [];
+  let derinlik = 0, tirnak = false, buf = '';
+  for (const ch of sema.replace(/--[^\n]*/g, '')) {
+    if (ch === "'") tirnak = !tirnak;
+    if (!tirnak) { if (ch === '(') derinlik++; else if (ch === ')') derinlik--; }
+    if (ch === ';' && !tirnak && derinlik === 0) { if (buf.trim()) parcalar.push(buf.trim()); buf = ''; continue; }
+    buf += ch;
+  }
+  if (buf.trim()) parcalar.push(buf.trim());
+  return parcalar;
+}
+
+function ustSeviyeAyir(govde) {
+  const parcalar = [];
+  let derinlik = 0, tirnak = false, buf = '';
+  for (const ch of govde) {
+    if (ch === "'") tirnak = !tirnak;
+    if (!tirnak) { if (ch === '(') derinlik++; else if (ch === ')') derinlik--; }
+    if (ch === ',' && !tirnak && derinlik === 0) { parcalar.push(buf.trim()); buf = ''; continue; }
+    buf += ch;
+  }
+  if (buf.trim()) parcalar.push(buf.trim());
+  return parcalar;
+}
+
+const KISIT = /^(unique|primary|foreign|check|constraint)$/i;
+function kolonListesi(metin) { return metin.replace(/\s+/g, '').split(',').filter(Boolean).sort().join(','); }
+function tabloTanimi(ifade) {
+  const bas = ifade.match(/CREATE TABLE IF NOT EXISTS\s+([a-z_]+)\s*\(/i);
+  if (!bas) return null;
+  const govde = ifade.slice(bas[0].length, ifade.lastIndexOf(')'));
+  const kolonlar = [];
+  for (const parca of ustSeviyeAyir(govde)) {
+    const ad = (parca.split(/\s+/)[0] || '').trim();
+    if (!/^[a-z_]+$/.test(ad) || KISIT.test(ad)) continue;
+    kolonlar.push({ ad, tanim: parca.replace(/\s+/g, ' ').trim() });
+  }
+  // Benzersizlik kısıtları: ON CONFLICT ifadelerinin çalışması bunlara bağlıdır
+  const benzersiz = [];
+  for (const parca of ustSeviyeAyir(govde)) {
+    const cok = parca.match(/^(?:UNIQUE|PRIMARY KEY)\s*\(([^)]+)\)/i);
+    if (cok) { benzersiz.push(kolonListesi(cok[1])); continue; }
+    const tek = parca.match(/^([a-z_]+)\s+[^(]*\b(?:UNIQUE|PRIMARY KEY)\b/i);
+    if (tek && !KISIT.test(tek[1])) benzersiz.push(tek[1]);
+  }
+  return { ad: bas[1], kolonlar, benzersiz };
+}
+
+// Var olan bir tabloya sonradan eklenecek kolon tanımı: NOT NULL kaldırılır (eski
+// satırlar için değer yoktur), SQLite sabit olmayan varsayılanı kabul etmez.
+function eklemeTanimi(tanim, motor) {
+  let t = tanim.replace(/\bNOT NULL\b/ig, ' ').replace(/\bUNIQUE\b/ig, ' ');
+  if (motor !== 'postgresql') t = t.replace(/DEFAULT\s*\(datetime\('now'\)\)/ig, ' ');
+  return t.replace(/\s+/g, ' ').trim();
+}
+
+// Tabloda hâlihazırda bulunan benzersiz indekslerin kolon listeleri
+function benzersizIndeksler(db, tablo) {
+  try {
+    if (db.motor === 'postgresql') {
+      return db.prepare('SELECT indexdef FROM pg_indexes WHERE schemaname=current_schema() AND tablename=?').all(tablo)
+        .filter(x => /CREATE UNIQUE/i.test(x.indexdef))
+        .map(x => kolonListesi(x.indexdef.slice(x.indexdef.lastIndexOf('(') + 1, x.indexdef.lastIndexOf(')'))));
+    }
+    return db.prepare(`PRAGMA index_list(${tablo})`).all().filter(i => i.unique)
+      .map(i => kolonListesi(db.prepare(`PRAGMA index_info(${i.name})`).all().map(c => c.name).join(',')));
+  } catch (e) { return []; }
+}
+
+function kisitlariTamamla(db, t) {
+  const var_ = benzersizIndeksler(db, t.ad);
+  for (const kolonlar of t.benzersiz || []) {
+    if (var_.includes(kolonlar)) continue;
+    const ad = `uq_${t.ad}_${kolonlar.replace(/,/g, '_')}`.slice(0, 60);
+    try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS ${ad} ON ${t.ad}(${kolonlar})`); console.log(`[ŞEMA] Benzersizlik kısıtı eklendi: ${t.ad}(${kolonlar})`); }
+    catch (e) { console.error(`[ŞEMA] ${t.ad}(${kolonlar}) benzersizlik kısıtı eklenemedi: ${e.message}`); }
+  }
+}
+
+function kolonlariTamamla(db, tablolar) {
+  const eklenen = [];
+  for (const t of tablolar) {
+    let mevcut;
+    try { mevcut = db.kolonlar(t.ad); } catch (e) { continue; }
+    if (!mevcut || !mevcut.length) continue;
+    let onarildi = false;
+    for (const k of t.kolonlar) {
+      if (mevcut.includes(k.ad) || /PRIMARY KEY/i.test(k.tanim)) continue;
+      try { db.exec(`ALTER TABLE ${t.ad} ADD COLUMN ${eklemeTanimi(k.tanim, db.motor)}`); eklenen.push(`${t.ad}.${k.ad}`); onarildi = true; }
+      catch (e) { console.error(`[ŞEMA] ${t.ad}.${k.ad} eklenemedi: ${e.message}`); }
+    }
+    // Yalnızca onarılan (eski sürümden kalan) tablolarda kısıtları da denetle
+    if (onarildi) kisitlariTamamla(db, t);
+  }
+  if (eklenen.length) console.log('[ŞEMA] Eksik kolonlar tamamlandı:', eklenen.join(', '));
+}
+
+function calistir(db, ifade) {
+  try { db.exec(ifade); } catch (e) {
+    const ad = (ifade.match(/CREATE (?:TABLE|INDEX)(?: IF NOT EXISTS)?\s+([a-z_]+)/i) || [, 'bilinmeyen'])[1];
+    const hata = new Error(`Şema uygulanamadı (${ad}): ${e.message}`);
+    hata.sql = ifade.slice(0, 200);
+    throw hata;
+  }
+}
+
 function uygula(db) {
-  db.exec(TABLOLAR);
+  const ifadeler = ifadeleriAyir(TABLOLAR);
+  const tablolar = [];
+  // 1) Tablolar
+  for (const ifade of ifadeler) {
+    if (!/^CREATE TABLE/i.test(ifade)) continue;
+    calistir(db, ifade);
+    const t = tabloTanimi(ifade);
+    if (t) tablolar.push(t);
+  }
+  // 2) Eski kurulumlardan kalan eksik kolonlar
+  kolonlariTamamla(db, tablolar);
+  // 3) İndeksler: yalnızca hız içindir, biri oluşmazsa uygulama yine de açılır
+  for (const ifade of ifadeler) {
+    if (/^CREATE TABLE/i.test(ifade)) continue;
+    try { db.exec(ifade); } catch (e) { console.error('[ŞEMA] İndeks atlandı:', e.message); }
+  }
+
   // Varsayılan sistem ayarları
   const ayar = db.prepare('INSERT OR IGNORE INTO sistem_ayarlari (anahtar, deger) VALUES (?, ?)');
   [
