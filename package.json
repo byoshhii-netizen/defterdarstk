@@ -1,85 +1,43 @@
 {
-  "name": "defterdar-stk-yonetim",
-  "version": "2.0.0",
-  "description": "Defterdar STK Yönetim - Kurban ve Bağış Yönetim Sistemi",
+  "name": "defterdar",
+  "version": "3.0.0",
+  "description": "Defterdar — STK, dernek, şirket ve muhasebe büroları için bulut muhasebe ve yönetim sistemi",
   "main": "electron.js",
-  "author": "Defterdar STK",
+  "author": "Defterdar",
+  "license": "UNLICENSED",
+  "private": true,
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "start": "node server.js",
+    "dev": "node --watch server.js",
     "electron": "electron .",
-    "build": "electron-builder",
     "build:win": "electron-builder --win --x64"
   },
-  "dependencies": {
-    "axios": "^1.16.1",
-    "bcryptjs": "^3.0.3",
-    "cloudinary": "^2.9.0",
-    "connect-pg-simple": "^9.0.1",
-    "deasync": "^0.1.29",
-    "exceljs": "^4.4.0",
-    "express": "^4.18.2",
-    "express-session": "^1.17.3",
-    "multer": "^2.1.1",
-    "pg": "^8.12.0",
+  "dependencies": {},
+  "optionalDependencies": {
     "sql.js": "^1.14.1"
   },
   "devDependencies": {
-    "electron": "^29.4.6",
-    "electron-builder": "^24.13.3"
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "com.defterdar.stk",
-    "productName": "Defterdar STK Yönetim",
-    "copyright": "Copyright © 2025 Defterdar STK",
-    "forceCodeSigning": false,
-    "npmRebuild": false,
-    "buildDependenciesFromSource": false,
-    "nodeGypRebuild": false,
+    "appId": "com.defterdar.app",
+    "productName": "Defterdar",
+    "copyright": "Copyright © 2026 Defterdar",
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "assets/icon.ico",
-      "publisherName": "İÇDER",
-      "requestedExecutionLevel": "requireAdministrator"
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Defterdar STK Yönetim",
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico",
-      "deleteAppDataOnUninstall": false,
-      "uninstallDisplayName": "Defterdar STK Yönetim",
-      "include": "build/installer.nsh",
-      "warningsAsErrors": false,
-      "runAfterFinish": true,
-      "menuCategory": true,
-      "artifactName": "${productName}-Kurulum-${version}.${ext}"
+      "shortcutName": "Defterdar",
+      "artifactName": "Defterdar-Kurulum-${version}.${ext}"
     },
-    "files": [
-      "**/*",
-      "!data/**",
-      "!dist/**",
-      "!node_modules/.cache/**",
-      "!*.md",
-      "!fix_*.py",
-      "!*.bat"
-    ],
-    "extraMetadata": {
-      "author": "Defterdar STK"
-    }
+    "files": ["**/*", "!data/**", "!dist/**", "!*.md", "!test/**"]
   }
 }

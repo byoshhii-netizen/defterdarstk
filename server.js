@@ -1,257 +1,112 @@
-﻿const express = require('express');
-const session = require('express-session');
+'use strict';
+// Defterdar — STK ve işletmeler için muhasebe ve yönetim sistemi
+const fs = require('fs');
 const path = require('path');
-const { Pool } = require('pg');
 
-const app = express();
-const PORT = process.env.PORT || 4500;
+// node:sqlite deneysel uyarısını sessize al (diğer uyarılar görünür kalır)
+const _emit = process.emitWarning;
+process.emitWarning = function (w, ...a) { if (String(w && w.message || w).includes('SQLite')) return; return _emit.call(process, w, ...a); };
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const { baslat, db, DB_YOLU } = require('./src/lib/db');
+const { uygulamaOlustur } = require('./src/lib/http');
 
-app.use((req, res, next) => {
-  if (req.path.endsWith('.js') || req.path.endsWith('.css') || req.path.endsWith('.html')) {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-  }
-  next();
-});
+const PORT = +process.env.PORT || 4500;
+const HOST = process.env.HOST || '0.0.0.0';
+const GUVEN_PROXY = process.env.TRUST_PROXY === '1' || !!process.env.RAILWAY_ENVIRONMENT || !!process.env.RENDER;
+const PUBLIC = path.join(__dirname, 'public');
 
-// index.html hariç statik dosyalar (CSS, JS, resimler vs.)
-app.use(express.static(path.join(__dirname, 'public'), {
-  index: false // index.html'i otomatik servis etme, middleware'den geçsin
-}));
-
-app.set('trust proxy', 1);
-
-// Session store ayarı
-let sessionStore = new session.MemoryStore(); // Default memory store
-let pgPool = null;
-
-// Railway'de PostgreSQL varsa kullan
-if (process.env.DATABASE_URL || process.env.RAILWAY_ENVIRONMENT) {
+// Bekleyen veritabanı geri yüklemesi varsa açılışta uygula
+function bekleyenGeriYukleme() {
+  const yol = DB_YOLU + '.geri-yukle';
+  if (!fs.existsSync(yol)) return;
   try {
-    pgPool = new Pool({
-      connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL
-    });
-    const pgSession = require('connect-pg-simple')(session);
-    sessionStore = new pgSession({
-      pool: pgPool,
-      tableName: 'session',
-      createTableIfMissing: true
-    });
-    console.log('[SESSION] PostgreSQL store kullanılıyor');
-  } catch (e) {
-    console.warn('[SESSION] PostgreSQL store hatası, memory store kullanılıyor:', e.message);
-    sessionStore = new session.MemoryStore();
-  }
+    for (const ek of ['-wal', '-shm']) { try { fs.unlinkSync(DB_YOLU + ek); } catch (e) { /* */ } }
+    fs.renameSync(yol, DB_YOLU);
+    console.log('[DB] Yedekten geri yükleme uygulandı');
+  } catch (e) { console.error('[DB] Geri yükleme uygulanamadı:', e.message); }
 }
 
-app.use(session({
-  store: sessionStore,
-  secret: process.env.SESSION_SECRET || 'defterdar-cms-2024',
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    maxAge: 24 * 60 * 60 * 1000,
-    secure: process.env.NODE_ENV === 'production' || !!process.env.RAILWAY_ENVIRONMENT,
-    httpOnly: true,
-    sameSite: 'lax'
-  }
-}));
+async function olustur() {
+  bekleyenGeriYukleme();
+  await baslat();
+  const app = uygulamaOlustur({ statikKlasor: PUBLIC, guvenProxy: GUVEN_PROXY });
+  const O = require('./src/lib/oturum');
 
-app.use('/api/auth', require('./src/auth'));
-app.use('/api/admin', require('./src/admin-routes'));
-
-// ─── SİSTEM MODU API BLOKAJI ────────────────────────────────────────────────
-// Bakım/Kapalı modda admin dışındaki kullanıcıların TÜM /api/* isteklerini engelle
-// (sadece sistem-modu sorgulama ve auth endpoints geçer)
-async function sistemModuApiBlokaj(req, res, next) {
-  // Admin oturumu varsa geçir
-  if (req.session.adminGiris) return next();
-  // İstisnalar: sistem modu sorgulama (frontend polling), auth (giriş/çıkış)
-  if (req.path.startsWith('/admin/sistem-modu') ||
-      req.path.startsWith('/auth/')) {
-    return next();
-  }
-  try {
-    const { getDb } = process.env.RAILWAY_ENVIRONMENT || process.env.PORT
-      ? require('./src/database-web')
-      : require('./src/database');
-    const db = await getDb();
-    const modRow = db.prepare("SELECT deger FROM sistem_ayarlari WHERE anahtar='sistem_modu'").get();
-    const notRow = db.prepare("SELECT deger FROM sistem_ayarlari WHERE anahtar='sistem_notu'").get();
-    const mod = modRow?.deger || 'acik';
-    if (mod === 'bakim' || mod === 'kapali') {
-      // İçder oturumu da silinsin → sonraki sayfa yüklemesinde bakım ekranına atılsın
-      delete req.session.icderGiris;
-      return res.status(503).json({
-        hata: mod === 'bakim' ? 'Sistem bakım modunda' : 'Sistem kapalı',
-        sistem_modu: mod,
-        sistem_notu: notRow?.deger || '',
-        bloke: true,
-      });
+  app.onKatman((req, res) => {
+    if (process.env.FORCE_HTTPS === '1' && GUVEN_PROXY && req.headers['x-forwarded-proto'] === 'http') {
+      res.yonlendir('https://' + req.headers.host + req.url); return false;
     }
-  } catch(e) { /* DB hatası olursa devam et */ }
-  next();
-}
-app.use('/api', sistemModuApiBlokaj);
-
-app.use('/api', require('./src/routes'));
-app.use('/api/uhrevi', require('./src/uhrevi-routes'));
-app.use('/api/medya', require('./src/cloudinary'));
-app.use('/api/destek', require('./src/destek-routes'));
-app.use('/api', require('./src/sms-routes'));
-
-app.get('/', (req, res) => {
-  return res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/giris', (req, res) => res.sendFile(path.join(__dirname, 'public', 'giris.html')));
-app.get('/kayit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'giris.html')));
-app.get('/icder-giris', (req, res) => res.redirect('/'));
-app.get('/admin-giris', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-giris.html')));
-app.get('/dypadmin', (req, res) => {
-  if (!req.session.adminGiris) return res.redirect('/admin-giris?returnUrl=/dypadmin');
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-// Giriş koruması: yeni landing page'den sonra hesaplı kullanıcılar app shell'e erişir.
-async function icderGirisKontrol(req, res, next) {
-  if (req.path.startsWith('/api') ||
-      req.path.startsWith('/fa') ||
-      req.path === '/icder-giris' ||
-      req.path === '/icder-giris.html' ||
-      req.path === '/admin' ||
-      req.path === '/dypadmin' ||
-      req.path === '/admin-giris' ||
-      req.path === '/admin-giris.html' ||
-      req.path === '/giris' ||
-      req.path === '/kayit' ||
-      req.path === '/' ||
-      req.path.includes('.css') ||
-      req.path.includes('.js') ||
-      req.path.includes('.png') ||
-      req.path.includes('.jpg') ||
-      req.path.includes('.ico')) {
-    return next();
-  }
-
-  return next();
-}
-
-app.use(icderGirisKontrol);
-
-app.get('*', (req, res) => {
-  if (req.path.startsWith('/api')) return res.status(404).json({ ok: false });
-  return res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-module.exports = app;
-
-// ─── OTOMATİK YEDEK SİSTEMİ ─────────────────────────────────────────────────
-let _otoYedekTimer = null;
-
-async function otoYedekCalistir() {
-  try {
-    const dbMod = process.env.RAILWAY_ENVIRONMENT || process.env.PORT
-      ? require('./src/database-web')
-      : require('./src/database');
-    const { getDb } = dbMod;
-    const db = await getDb();
-
-    // Ayarları oku
-    const aktifRow = db.prepare("SELECT deger FROM sistem_ayarlari WHERE anahtar='oto_yedek_aktif'").get();
-    if (aktifRow?.deger === '0') return; // Kapalıysa çalışma
-
-    // Yedek verisini oluştur
-    const orglar = db.prepare('SELECT * FROM organizasyonlar').all();
-    const yedekData = { tarih: new Date().toISOString(), organizasyonlar: [] };
-    for (const org of orglar) {
-      const kurbanlar = db.prepare('SELECT * FROM kurbanlar WHERE organizasyon_id=?').all(org.id);
-      const orgObj = { ...org, kurbanlar: [] };
-      for (const k of kurbanlar) {
-        const hisseler = db.prepare('SELECT * FROM hisseler WHERE kurban_id=?').all(k.id);
-        orgObj.kurbanlar.push({ ...k, hisseler });
-      }
-      yedekData.organizasyonlar.push(orgObj);
-    }
-    const ayarlar = db.prepare('SELECT * FROM ayarlar WHERE kullanici_id=1').get();
-    if (ayarlar) yedekData.yazdirma_ayarlari = { logo_data: ayarlar.logo_data, bayrak_data: ayarlar.bayrak_data };
-
-    const json = JSON.stringify(yedekData);
-    const tarihStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const dosyaAdi = `oto-yedek-${tarihStr}.json`;
-
-    // Kaydet
-    const fs = require('fs');
-    const pathMod = require('path');
-    let dir;
-    try {
-      const { app: electronApp } = require('electron');
-      dir = pathMod.join(electronApp.getPath('userData'), 'otomatik-yedek');
-    } catch (e) {
-      dir = pathMod.join(__dirname, 'otomatik-yedek');
-    }
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(pathMod.join(dir, dosyaAdi), json, 'utf8');
-
-    // Eski yedekleri temizle (son 50 tane tut)
-    const dosyalar = fs.readdirSync(dir)
-      .filter(f => f.startsWith('oto-yedek-') && f.endsWith('.json'))
-      .sort();
-    if (dosyalar.length > 50) {
-      dosyalar.slice(0, dosyalar.length - 50).forEach(f => {
-        try { fs.unlinkSync(pathMod.join(dir, f)); } catch(e) {}
-      });
-    }
-
-    // Log tablosuna kaydet
-    try {
-      db.prepare("CREATE TABLE IF NOT EXISTS oto_yedek_loglar (id INTEGER PRIMARY KEY AUTOINCREMENT, dosya_adi TEXT NOT NULL, boyut INTEGER DEFAULT 0, tarih DATETIME DEFAULT CURRENT_TIMESTAMP, durum TEXT DEFAULT 'basarili')").run ? 
-        db.prepare("CREATE TABLE IF NOT EXISTS oto_yedek_loglar (id INTEGER PRIMARY KEY AUTOINCREMENT, dosya_adi TEXT NOT NULL, boyut INTEGER DEFAULT 0, tarih DATETIME DEFAULT CURRENT_TIMESTAMP, durum TEXT DEFAULT 'basarili')").run() :
-        db.exec("CREATE TABLE IF NOT EXISTS oto_yedek_loglar (id INTEGER PRIMARY KEY AUTOINCREMENT, dosya_adi TEXT NOT NULL, boyut INTEGER DEFAULT 0, tarih DATETIME DEFAULT CURRENT_TIMESTAMP, durum TEXT DEFAULT 'basarili')");
-    } catch(e) {}
-    try {
-      db.prepare("INSERT INTO oto_yedek_loglar (dosya_adi, boyut, durum) VALUES (?,?,?)").run(dosyaAdi, json.length, 'basarili');
-      // Son 200 logu tut
-      db.prepare("DELETE FROM oto_yedek_loglar WHERE id NOT IN (SELECT id FROM oto_yedek_loglar ORDER BY id DESC LIMIT 200)").run();
-    } catch(e) {}
-
-    console.log(`[OTO-YEDEK] ${dosyaAdi} kaydedildi (${Math.round(json.length/1024)} KB)`);
-  } catch (e) {
-    console.error('[OTO-YEDEK] Hata:', e.message);
-  }
-}
-
-async function otoYedekBaslat() {
-  if (_otoYedekTimer) { clearInterval(_otoYedekTimer); _otoYedekTimer = null; }
-  try {
-    const dbMod = process.env.RAILWAY_ENVIRONMENT || process.env.PORT
-      ? require('./src/database-web')
-      : require('./src/database');
-    const { getDb } = dbMod;
-    const db = await getDb();
-    const dakikaRow = db.prepare("SELECT deger FROM sistem_ayarlari WHERE anahtar='oto_yedek_dakika'").get();
-    const dakika = Math.max(1, parseInt(dakikaRow?.deger || '10'));
-    const ms = dakika * 60 * 1000;
-    _otoYedekTimer = setInterval(otoYedekCalistir, ms);
-    console.log(`[OTO-YEDEK] Her ${dakika} dakikada bir çalışacak`);
-  } catch(e) {
-    // DB henüz hazır değilse 30 sn sonra tekrar dene
-    setTimeout(otoYedekBaslat, 30000);
-  }
-}
-
-// Dışarıdan timer'ı yeniden başlatmak için export
-module.exports.otoYedekBaslat = otoYedekBaslat;
-module.exports.otoYedekCalistir = otoYedekCalistir;
-
-if (require.main === module) {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`İÇDER Dernek Yönetim Programı: http://localhost:${PORT}`);
-    // Sunucu başlayınca otomatik yedek başlat
-    setTimeout(otoYedekBaslat, 5000);
+    // Eski/hassas dosyalara erişimi engelle
+    if (/^\/(data|src|node_modules|\.)/i.test(req.yol) || /\.(db|env|key|pem|md)$/i.test(req.yol)) { res.statusCode = 404; res.end('Bulunamadı'); return false; }
+    if (O.ipEngelliMi(req.ip) && !req.yol.startsWith('/css') && !req.yol.startsWith('/fa')) { res.statusCode = 403; res.setHeader('Content-Type', 'text/plain; charset=utf-8'); res.end('Erişim engellendi'); return false; }
   });
+
+  require('./src/routes/auth')(app);
+  require('./src/routes/kurban')(app);
+  require('./src/routes/kayit')(app);
+  require('./src/routes/finans')(app);
+  require('./src/routes/rapor')(app);
+  require('./src/routes/personel')(app);
+  require('./src/routes/sistem')(app);
+  require('./src/routes/sadmin')(app);
+
+  const sayfa = app.yonlendirici('');
+  sayfa.get('/saglik', (req, res) => {
+    try { db().prepare('SELECT 1 AS x').get(); return { durum: 'ok', veritabani: db().motor || 'sqlite' }; }
+    catch (e) { res.json({ durum: 'hata', veritabani: 'erişilemiyor' }, 503); }
+  });
+  // Yönetici destek erişimi: tek kullanımlık kod → kullanıcı oturum çerezi
+  sayfa.get('/destek-erisimi', (req, res) => {
+    const token = require('./src/routes/sadmin').erisimKoduKullan(String(req.sorgu.kod || ''));
+    if (!token) { res.statusCode = 410; res.setHeader('Content-Type', 'text/plain; charset=utf-8'); res.end('Erişim bağlantısının süresi doldu.'); return; }
+    res.cerez(O.CEREZ.kullanici, token, { sameSite: 'Lax' });
+    res.yonlendir('/panel');
+  });
+  const sadminHtml = (req, res) => { res.setHeader('Cache-Control', 'no-store'); app.statikGonder(req, res, '/sadmin.html', false); };
+  sayfa.get('/sadmin', sadminHtml);
+  sayfa.get('/sadmin/*', sadminHtml);
+  // Eski adresler
+  sayfa.get('/dypadmin', (req, res) => res.yonlendir('/sadmin'));
+  sayfa.get('/admin-giris', (req, res) => res.yonlendir('/sadmin'));
+  sayfa.get('/icder-giris', (req, res) => res.yonlendir('/giris'));
+  // Uygulama (tek sayfa) — tüm Türkçe rotalar
+  sayfa.get('/*', (req, res) => { res.setHeader('Cache-Control', 'no-cache'); app.statikGonder(req, res, '/index.html', false); });
+
+  return app;
 }
+
+function zamanlayici() {
+  const { db } = require('./src/lib/db');
+  const O = require('./src/lib/oturum');
+  let sonYedekGunu = null;
+  const tik = () => {
+    try {
+      db().prepare('DELETE FROM oturumlar WHERE bitis<?').run(Date.now());
+      db().prepare("DELETE FROM giris_kayitlari WHERE tarih<datetime('now','-180 day')").run();
+      db().prepare("DELETE FROM cop_kutusu WHERE silme_tarihi<datetime('now','-180 day')").run();
+      const simdi = new Date(Date.now() + 3 * 3600000);
+      const gun = simdi.toISOString().slice(0, 10);
+      if (O.ayar('oto_yedek_aktif', '1') === '1' && simdi.getUTCHours() === +O.ayar('oto_yedek_saat', '6') && sonYedekGunu !== gun) {
+        sonYedekGunu = gun;
+        const ad = require('./src/routes/sadmin').otoYedekAl('otomatik');
+        console.log('[YEDEK] Otomatik yedek alındı:', ad);
+      }
+    } catch (e) { console.error('[ZAMANLAYICI]', e.message); }
+  };
+  setInterval(tik, 10 * 60 * 1000).unref();
+  setTimeout(tik, 15000).unref();
+}
+
+async function calistir(port = PORT, host = HOST) {
+  const app = await olustur();
+  const sunucu = app.sunucu();
+  await new Promise((ok, red) => { sunucu.once('error', red); sunucu.listen(port, host, ok); });
+  zamanlayici();
+  console.log(`Defterdar çalışıyor: http://localhost:${port}`);
+  const kapat = () => { try { require('./src/lib/db').db().kaydet(); } catch (e) { /* */ } process.exit(0); };
+  process.on('SIGINT', kapat); process.on('SIGTERM', kapat);
+  return sunucu;
+}
+
+module.exports = { olustur, calistir };
+if (require.main === module) calistir().catch(e => { console.error('Başlatılamadı:', e.message); process.exit(1); });
