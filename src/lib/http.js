@@ -203,7 +203,13 @@ function uygulamaOlustur({ statikKlasor, guvenProxy }) {
     } catch (e) {
       if (res.headersSent) { try { res.end(); } catch (x) { /* */ } return; }
       const durum = e.durum || 500;
-      if (!e.durum) console.error('[HATA]', req.method, req.yol, e.stack || e.message);
+      if (!e.durum) {
+        console.error('[HATA]', req.method, req.yol, e.stack || e.message);
+        require('./hatalar').ekle({
+          metod: req.method, yol: req.yol, mesaj: e.message, kod: e.code || null,
+          ip: req.ip, satir: (String(e.stack || '').split('\n')[1] || '').trim().slice(0, 160),
+        });
+      }
       if (req.yol.startsWith('/api/')) res.json({ hata: durum >= 500 && !e.durum ? 'Sunucu hatası oluştu' : e.message, ...(e.ek || {}) }, durum);
       else { res.statusCode = durum; res.setHeader('Content-Type', 'text/plain; charset=utf-8'); res.end(durum === 404 ? 'Bulunamadı' : durum === 503 ? 'Hizmet geçici olarak kullanılamıyor. Lütfen biraz sonra tekrar deneyin.' : 'Hata'); }
     }

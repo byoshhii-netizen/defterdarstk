@@ -356,6 +356,14 @@ module.exports = function (app) {
     O.denetimYaz(req, 'Tüm kullanıcı oturumları kapatıldı', 'oturum', { adet: n });
     return { ok: true, kapatilan: n };
   });
+  // Son sunucu hataları (bellekte, 60 kayıt)
+  r.get('/guvenlik/hatalar', () => require('../lib/hatalar').son());
+  r.delete('/guvenlik/hatalar', yazabilir, (req) => {
+    const n = require('../lib/hatalar').temizle();
+    O.denetimYaz(req, 'Sunucu hata kaydı temizlendi', 'sistem', { adet: n });
+    return { ok: true, silinen: n };
+  });
+
   r.get('/guvenlik/ip', () => db().prepare('SELECT * FROM ip_engelleri ORDER BY olusturma DESC').all());
   r.post('/guvenlik/ip', yazabilir, (req) => {
     const ip = String(req.body.ip || '').trim(); if (!/^[0-9a-fA-F:.]{3,45}$/.test(ip)) throw hata(400, 'Geçersiz IP adresi');

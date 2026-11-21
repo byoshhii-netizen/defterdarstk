@@ -337,6 +337,26 @@ function kolonlariTamamla(db, tablolar) {
   if (eklenen.length) console.log('[ŞEMA] Eksik kolonlar tamamlandı:', eklenen.join(', '));
 }
 
+// Eski sürümden kalan, artık kullanılmayan zorunlu kolonlar yeni kayıtları engeller:
+// bunları isteğe bağlı hale getiririz (veri silinmez).
+const AD = /^[a-z_][a-z0-9_]*$/i;
+function zorunluluklariGevset(db, tablolar) {
+  if (db.motor !== 'postgresql') return;
+  let satirlar;
+  try {
+    satirlar = db.prepare("SELECT table_name AS tablo, column_name AS kolon FROM information_schema.columns WHERE table_schema=current_schema() AND is_nullable='NO' AND column_default IS NULL AND is_identity='NO'").all();
+  } catch (e) { return; }
+  const bilinen = new Map(tablolar.map(t => [t.ad, new Set(t.kolonlar.map(k => k.ad))]));
+  const gevsek = [];
+  for (const s of satirlar) {
+    const kolonlar = bilinen.get(s.tablo);
+    if (!kolonlar || kolonlar.has(s.kolon) || !AD.test(s.tablo) || !AD.test(s.kolon)) continue;
+    try { db.exec(`ALTER TABLE ${s.tablo} ALTER COLUMN ${s.kolon} DROP NOT NULL`); gevsek.push(`${s.tablo}.${s.kolon}`); }
+    catch (e) { console.error(`[ŞEMA] ${s.tablo}.${s.kolon} isteğe bağlı yapılamadı: ${e.message}`); }
+  }
+  if (gevsek.length) console.log('[ŞEMA] Eski sürümden kalan zorunlu kolonlar isteğe bağlı yapıldı:', gevsek.join(', '));
+}
+
 function calistir(db, ifade) {
   try { db.exec(ifade); } catch (e) {
     const ad = (ifade.match(/CREATE (?:TABLE|INDEX)(?: IF NOT EXISTS)?\s+([a-z_]+)/i) || [, 'bilinmeyen'])[1];
@@ -356,8 +376,9 @@ function uygula(db) {
     const t = tabloTanimi(ifade);
     if (t) tablolar.push(t);
   }
-  // 2) Eski kurulumlardan kalan eksik kolonlar
+  // 2) Eski kurulumlardan kalan eksik kolonlar ve kullanılmayan zorunluluklar
   kolonlariTamamla(db, tablolar);
+  zorunluluklariGevset(db, tablolar);
   // 3) İndeksler: yalnızca hız içindir, biri oluşmazsa uygulama yine de açılır
   for (const ifade of ifadeler) {
     if (/^CREATE TABLE/i.test(ifade)) continue;

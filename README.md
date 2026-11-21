@@ -35,6 +35,10 @@ Yedekleme PostgreSQL'de `.json.gz` biçimindedir: `/sadmin → Yedekler` bölüm
 
 Uygulama her açılışta eksik tabloları oluşturur, eski bir kurulumdan kalmış tablolarda eksik kolonları ve benzersizlik kısıtlarını tamamlar; yaptığı değişiklikleri `[ŞEMA]` satırlarıyla günlüğe yazar. Bu yüzden eski bir veritabanının üzerine yeni sürüm kurulabilir.
 
+Eski bir sürümden kalan, artık kullanılmayan zorunlu (NOT NULL) kolonlar da isteğe bağlı hale getirilir; aksi halde yeni kayıt eklenirken "Sunucu hatası oluştu" uyarısı alınır.
+
+Beklenmeyen hatalar yönetim panelinde **Güvenlik merkezi → Sunucu hataları** sekmesinde görünür (son 60 kayıt, yalnızca bellekte tutulur). Bir işlem "Sunucu hatası oluştu" derse hatanın asıl nedenini oradan okuyabilirsiniz.
+
 Yine de açılışta `Şema uygulanamadı (tablo_adı): ...` hatası görürseniz, hata hangi tabloda olduğunu söyler. Veritabanı boşsa en temizi sıfırdan başlamaktır: Railway'de Postgres servisi → **Data** sekmesinden veritabanını silip yeniden oluşturun ya da sorgu ekranında `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` çalıştırın, sonra Defterdar servisini yeniden başlatın.
 
 ## Hesap türleri ve akıllı menü

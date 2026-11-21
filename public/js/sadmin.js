@@ -276,7 +276,7 @@ const SAYFA = {
 
   async guvenlik(kok, p, sorgu) {
     const sekme = sorgu.sekme || 'girisler';
-    const ust = html`${sayfaBaslik({ baslik: 'Güvenlik merkezi', alt: 'Giriş denemeleri, aktif oturumlar ve IP engelleri' })}<nav class="sekmeler">${[['girisler', 'Giriş kayıtları'], ['oturumlar', 'Aktif oturumlar'], ['ip', 'IP engelleri']].map(([k, a]) => html`<a href="/sadmin/guvenlik?sekme=${k}" class="${sekme === k ? 'aktif' : ''}">${a}</a>`)}</nav>`;
+    const ust = html`${sayfaBaslik({ baslik: 'Güvenlik merkezi', alt: 'Giriş denemeleri, oturumlar, IP engelleri ve sunucu hataları' })}<nav class="sekmeler">${[['girisler', 'Giriş kayıtları'], ['oturumlar', 'Aktif oturumlar'], ['ip', 'IP engelleri'], ['hatalar', 'Sunucu hataları']].map(([k, a]) => html`<a href="/sadmin/guvenlik?sekme=${k}" class="${sekme === k ? 'aktif' : ''}">${a}</a>`)}</nav>`;
     if (sekme === 'girisler') {
       const d = { q: '', basarili: '', tip: '' };
       yerlestir(kok, html`${ust}<section class="kart"><div class="filtre-cubuk"><div class="ara"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="ara" placeholder="Kimlik veya IP"></div><select data-f="tip" style="width:auto"><option value="">Tür: tümü</option><option value="admin">Yönetim</option><option value="kullanici">Kullanıcı</option></select><select data-f="basarili" style="width:auto"><option value="">Sonuç: tümü</option><option value="0">Başarısız</option><option value="1">Başarılı</option></select></div><div class="tablo-kap" id="tablo"></div></section>`);
@@ -290,6 +290,13 @@ const SAYFA = {
       const l = await api('GET', '/guvenlik/oturumlar');
       yerlestir(kok, html`${ust}<section class="kart"><div class="kart-baslik"><div><h2>${l.length} aktif oturum</h2></div>${A.rol === 'super' ? html`<button class="dugme kucuk tehlike" data-eylem="hepsi">Tüm kullanıcı oturumlarını kapat</button>` : ''}</div><div class="tablo-kap"><table class="tablo mobil-kart"><thead><tr><th>Kim</th><th>Kurum</th><th>Tür</th><th>IP</th><th>Son erişim</th><th class="eylemler"></th></tr></thead><tbody>${l.map(o => html`<tr><td class="mk-baslik">${o.kim || '—'}${o.taklit_admin_id ? html` ${rozet('Destek erişimi', 'uyari')}` : ''}</td><td data-etiket="Kurum">${o.hesap_ad || '—'}</td><td data-etiket="Tür">${o.tip === 'admin' ? rozet('Yönetim', 'muhur') : 'Kullanıcı'}</td><td data-etiket="IP">${o.ip}</td><td data-etiket="Son erişim">${goreceli(o.son_erisim)}</td><td class="eylemler">${A.rol !== 'izleyici' ? html`<button class="dugme kucuk" data-eylem="kapat" data-id="${o.id}">Sonlandır</button>` : ''}</td></tr>`)}</tbody></table></div></section>`);
       baglan(kok, { kapat: async (el) => { await api('POST', '/guvenlik/oturum-kapat', { id: el.dataset.id }); bildir('Oturum sonlandırıldı'); SAYFA.guvenlik(kok, p, sorgu); }, hepsi: async () => { if (!await onayla({ mesaj: 'Tüm kullanıcılar sistemden çıkarılacak. Emin misiniz?', dugme: 'Hepsini kapat', tehlike: true })) return; const r = await api('POST', '/guvenlik/tum-oturumlar'); bildir(`${r.kapatilan} oturum kapatıldı`); SAYFA.guvenlik(kok, p, sorgu); } });
+      return;
+    }
+    if (sekme === 'hatalar') {
+      const l = await api('GET', '/guvenlik/hatalar');
+      yerlestir(kok, html`${ust}<section class="kart"><div class="kart-baslik"><div><h2>Son sunucu hataları</h2><p>Beklenmeyen hatalar burada görünür. Yalnızca bellekte tutulur, sunucu yeniden başlayınca silinir.</p></div>${l.length && A.rol !== 'izleyici' ? html`<button class="dugme kucuk" data-eylem="temizle">Listeyi temizle</button>` : ''}</div>
+        ${l.length ? html`<div class="tablo-kap"><table class="tablo mobil-kart"><thead><tr><th>Zaman</th><th>İstek</th><th>Hata</th><th>IP</th></tr></thead><tbody>${l.map(h => html`<tr><td class="mk-gizle">${tarih(h.zaman, true)}</td><td class="mk-baslik">${h.metod} ${h.yol}</td><td data-etiket="Hata"><div>${h.mesaj}</div>${h.satir ? html`<div class="soluk" style="font-size:12px">${h.satir}</div>` : ''}</td><td data-etiket="IP">${h.ip || '—'}</td></tr>`)}</tbody></table></div>` : html`<div class="kart-govde soluk">Kayıtlı hata yok.</div>`}</section>`);
+      baglan(kok, { temizle: async () => { await api('DELETE', '/guvenlik/hatalar'); bildir('Hata listesi temizlendi'); SAYFA.guvenlik(kok, p, sorgu); } });
       return;
     }
     const l = await api('GET', '/guvenlik/ip');
