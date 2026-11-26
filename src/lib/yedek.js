@@ -1,5 +1,5 @@
 'use strict';
-// Hesap bazlı yedek alma / geri yükleme (kimlik eşlemeli) ve eski İÇDER yedeklerini içe aktarma.
+// Hesap bazlı yedek alma / geri yükleme (kimlik eşlemeli) ve eski kurban programı yedeklerini içe aktarma.
 const { db } = require('./db');
 const { hata } = require('./http');
 const { KAYIT_MODULLERI } = require('../moduller');
@@ -84,9 +84,9 @@ function geriYukle(hesapId, yedek) {
   return say;
 }
 
-// Eski İÇDER Kurban Programı JSON yedeği (versiyon 1.0 / 2.0) → mevcut hesaba ekleme
+// Eski kurban programı JSON yedeği (versiyon 1.0 / 2.0) → mevcut hesaba ekleme
 function icderAktar(hesapId, yedek) {
-  if (!yedek || !Array.isArray(yedek.organizasyonlar)) throw hata(400, 'Bu dosya İÇDER Kurban Programı yedeği değil');
+  if (!yedek || !Array.isArray(yedek.organizasyonlar)) throw hata(400, 'Bu dosya kurban programı yedeği değil');
   const say = { organizasyon: 0, kurban: 0, hisse: 0 };
   const turler = ['Udhiye', 'Adak', 'Akika', 'Şükür', 'Nafile', 'Vacip', 'Hedy', 'Diğer'];
   db().islem(() => {

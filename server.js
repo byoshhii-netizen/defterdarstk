@@ -70,7 +70,6 @@ async function olustur() {
   // Eski adresler
   sayfa.get('/dypadmin', (req, res) => res.yonlendir('/sadmin'));
   sayfa.get('/admin-giris', (req, res) => res.yonlendir('/sadmin'));
-  sayfa.get('/icder-giris', (req, res) => res.yonlendir('/giris'));
   // Uygulama (tek sayfa) — tüm Türkçe rotalar
   sayfa.get('/*', (req, res) => { res.setHeader('Cache-Control', 'no-cache'); app.statikGonder(req, res, '/index.html', false); });
 

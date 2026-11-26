@@ -1,6 +1,6 @@
 # Defterdar
 
-Dernek, vakıf, şirket, muhasebe bürosu ve esnaf için çok kullanıcılı, çok kurumlu muhasebe ve yönetim sistemi. İÇDER Kurban Programı'nın tüm özelliklerini içerir ve üzerine ön muhasebe, STK ve yönetim modülleri ekler.
+Dernek, vakıf, şirket, muhasebe bürosu ve esnaf için çok kullanıcılı, çok kurumlu muhasebe ve yönetim sistemi. kurban programının tüm özelliklerini içerir ve üzerine ön muhasebe, STK ve yönetim modülleri ekler.
 
 ## Çalıştırma
 
@@ -53,7 +53,7 @@ puan = 100 × tür uyumu + (seçili faaliyet ise +80, seçilmemişse −40) + 60
 
 ## Modüller
 
-- **Kurban:** organizasyon, büyükbaş/küçükbaş, 7 hisse, hissedar otomatik tamamlama, vekalet ekranı, kesim videosu, toplu işlemler, İÇDER düzeninde yazdırma (Türk bayrağı, logo, ülke bayrağı), Excel, tahsilatın kasaya otomatik işlenmesi
+- **Kurban:** organizasyon, büyükbaş/küçükbaş, 7 hisse, hissedar otomatik tamamlama, vekalet ekranı, kesim videosu, toplu işlemler, resmî kurban düzeninde yazdırma (Türk bayrağı, logo, ülke bayrağı), Excel, tahsilatın kasaya otomatik işlenmesi
 - **Bağış ve sosyal yardım:** bağış + makbuz (yazıyla tutar), üye, aidat, yetim sponsorluğu, ihtiyaç sahibi, yardım dağıtımı, su kuyusu, kumbara, gönüllü
 - **Satış ve cari:** cari hesap + ekstre, satış/alış/iade faturası (KDV, iskonto, stok düşümü), teklif → fatura, satış fırsatları
 - **Finans:** kasa/banka/kredi kartı, gelir-gider, virman, belge ekleme, çek-senet, masraf, bütçe
@@ -61,7 +61,7 @@ puan = 100 × tür uyumu + (seçili faaliyet ise +80, seçilmemişse −40) + 60
 - **Müşavirlik:** mükellefler, beyanname takvimi
 - **İK ve iş takibi:** personel (izin, devamsızlık, avans, maaş, toplu maaş, PIN koruması), proje, etkinlik, görev, karar defteri, evrak, partner
 - **Raporlar:** gelir-gider, kâr-zarar, KDV, alacak/borç yaşlandırma, nakit akışı tahmini, bağış, stok
-- **Sistem:** toplu SMS (Netgsm), medya deposu (Cloudinary veya sunucu), destek talepleri, çöp kutusu (geri yükleme), işlem geçmişi, kullanıcı ve rol yönetimi, kayıtlı görünümler, Ctrl+K genel arama, JSON yedek/geri yükleme, eski İÇDER yedeğini içe aktarma
+- **Sistem:** toplu SMS (Netgsm), medya deposu (Cloudinary veya sunucu), destek talepleri, çöp kutusu (geri yükleme), işlem geçmişi, kullanıcı ve rol yönetimi, kayıtlı görünümler, Ctrl+K genel arama, JSON yedek/geri yükleme, eski kurban yedeğini içe aktarma
 
 ## Türkçe adresler
 

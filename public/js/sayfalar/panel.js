@@ -32,7 +32,7 @@ export async function panel(kok, params, sorgu) {
       <div style="flex:1;min-width:240px"><h2 style="font-size:17px;margin-bottom:6px">Defterdar'a hoş geldiniz</h2><p class="soluk">Menünüz ve ekranlarınız ${D.tanimlar.hesapTurleri[o.hesap.tur].kisa} hesabına ve seçtiğiniz faaliyetlere göre düzenlendi. Birkaç adımda kullanıma hazır hale getirin:</p></div>
       <ol style="margin:0;padding-left:20px;line-height:2;flex:1;min-width:240px">
         <li><a href="/ayarlar/kurum">Kurum bilgilerini ve logoyu ekleyin</a></li><li><a href="/kasa-banka">Kasa ve banka hesaplarınızı tanımlayın</a></li>
-        <li><a href="/ayarlar/kullanicilar">Ekip arkadaşlarınızı davet edin</a></li><li><a href="/yedekleme">Eski İÇDER yedeğiniz varsa içe aktarın</a></li></ol></div></div>` : ''}
+        <li><a href="/ayarlar/kullanicilar">Ekip arkadaşlarınızı davet edin</a></li><li><a href="/yedekleme">Eski kurban yedeğiniz varsa içe aktarın</a></li></ol></div></div>` : ''}
     <div class="kpi-sira">${kpiler}</div>
     ${sik.length ? html`<section class="kart" style="margin-bottom:16px"><div class="kart-baslik"><div><h2>${o.menu.sik[0] && o.menu.sik[0].kullanim > 0 ? 'Sık kullandıklarınız' : 'Sizin için önerilenler'}</h2><p>Kullanım alışkanlığınıza ve hesap türünüze göre sıralanır</p></div></div><div class="kart-govde"><div class="karo-sira">${sik.map(m => html`<a class="karo" href="${m.rota}"><i class="fa-solid ${m.ikon}"></i>${m.ad}</a>`)}</div></div></section>` : ''}
     <div class="izgara izgara-3-1">

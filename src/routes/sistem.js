@@ -203,7 +203,7 @@ module.exports = function (app) {
   });
   r.post('/yedek/icder-aktar', yonetici, { limit: 100 * 1024 * 1024 }, (req) => {
     const say = Y.icderAktar(req.hesapId, req.body.yedek);
-    O.denetimYaz(req, 'Eski İÇDER yedeği aktarıldı', 'yedek', say);
+    O.denetimYaz(req, 'Eski kurban yedeği aktarıldı', 'yedek', say);
     return { ok: true, sayilar: say };
   });
 

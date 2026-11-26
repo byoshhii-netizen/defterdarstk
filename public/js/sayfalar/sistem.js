@@ -160,18 +160,18 @@ export async function cop(kok) {
 
 // ─── Yedekleme ───
 export async function yedek(kok) {
-  yerlestir(kok, html`${sayfaBaslik({ baslik: 'Yedekleme', alt: 'Kurumunuzun tüm verisini indirin, gerektiğinde geri yükleyin veya eski İÇDER Kurban Programı yedeğinizi aktarın.' })}
+  yerlestir(kok, html`${sayfaBaslik({ baslik: 'Yedekleme', alt: 'Kurumunuzun tüm verisini indirin, gerektiğinde geri yükleyin veya eski kurban programı yedeğinizi aktarın.' })}
     <div class="izgara izgara-3">
       <section class="kart"><div class="kart-baslik"><h2>Yedek indir</h2></div><div class="kart-govde"><p class="soluk" style="margin-bottom:14px">Tüm modüllerdeki kayıtlar tek bir JSON dosyasına aktarılır. Düzenli olarak indirip güvenli bir yerde saklayın.</p><button class="dugme birincil tam" data-eylem="indir"><i class="fa-solid fa-download"></i>Yedeği indir</button></div></section>
       <section class="kart"><div class="kart-baslik"><h2>Yedekten geri yükle</h2></div><div class="kart-govde"><p class="soluk" style="margin-bottom:14px">Mevcut verilerin <strong>tamamı silinir</strong> ve yedekteki verilerle değiştirilir. Yalnızca hesap sahibi yapabilir.</p><label class="dugme tam ${D.oturum.kullanici.rol !== 'sahip' ? 'gizli' : ''}"><i class="fa-solid fa-upload"></i>Defterdar yedeği seç<input type="file" accept=".json,application/json" hidden id="geri"></label></div></section>
-      <section class="kart"><div class="kart-baslik"><h2>İÇDER verisini aktar</h2></div><div class="kart-govde"><p class="soluk" style="margin-bottom:14px">Eski İÇDER Kurban Programı'nın "Tam yedek" JSON dosyasını seçin. Organizasyonlar, kurbanlar, hissedarlar ve logonuz mevcut verilere <strong>eklenir</strong>.</p><label class="dugme tam"><i class="fa-solid fa-file-import"></i>İÇDER yedeği seç<input type="file" accept=".json,application/json" hidden id="icder"></label></div></section>
+      <section class="kart"><div class="kart-baslik"><h2>Eski kurban yedeğini aktar</h2></div><div class="kart-govde"><p class="soluk" style="margin-bottom:14px">Eski kurban programınızın "Tam yedek" JSON dosyasını seçin. Organizasyonlar, kurbanlar, hissedarlar ve logonuz mevcut verilere <strong>eklenir</strong>.</p><label class="dugme tam"><i class="fa-solid fa-file-import"></i>Yedek dosyası seç<input type="file" accept=".json,application/json" hidden id="icder"></label></div></section>
     </div>
     <section class="kart bosluk-ust"><div class="kart-govde"><p class="soluk"><i class="fa-solid fa-shield-halved"></i> Sunucu tarafında her gün otomatik veritabanı yedeği de alınır. Yedek dosyanız kişisel veriler içerir; paylaşırken dikkat edin.</p></div></section>`);
   const oku = async (f) => { try { return JSON.parse(await dosyaOku(f, 'metin')); } catch (e) { throw new Error('Dosya okunamadı veya geçerli bir JSON değil'); } };
   $('#geri').addEventListener('change', async (e) => {
     try {
       const f = e.target.files[0]; if (!f) return; const y = await oku(f);
-      if (y.defterdar_yedek !== 2) throw new Error('Bu dosya bir Defterdar yedeği değil. İÇDER yedeği ise sağdaki "İÇDER verisini aktar" bölümünü kullanın.');
+      if (y.defterdar_yedek !== 2) throw new Error('Bu dosya bir Defterdar yedeği değil. Eski kurban yedeği ise sağdaki "Eski kurban yedeğini aktar" bölümünü kullanın.');
       if (!await onayla({ baslik: 'Geri yükleme', mesaj: `${tarih(y.tarih, true)} tarihli yedek yüklenecek. Şu anki tüm veriler silinecek.`, dugme: 'Geri yükle', tehlike: true, yazili: 'GERİ YÜKLE' })) return;
       const r = await api('POST', '/yedek/geri-yukle', { onay: 'GERİ YÜKLE', yedek: y });
       bildir(`Geri yükleme tamamlandı: ${Object.values(r.sayilar).reduce((a, b) => a + b, 0)} kayıt`, 'basari', 6000); setTimeout(() => location.reload(), 1200);
@@ -180,9 +180,9 @@ export async function yedek(kok) {
   $('#icder').addEventListener('change', async (e) => {
     try {
       const f = e.target.files[0]; if (!f) return; const y = await oku(f);
-      if (!Array.isArray(y.organizasyonlar)) throw new Error('Bu dosya İÇDER Kurban Programı yedeği değil');
+      if (!Array.isArray(y.organizasyonlar)) throw new Error('Bu dosya kurban programı yedeği değil');
       const k = y.organizasyonlar.reduce((a, o) => a + (o.kurbanlar || []).length, 0);
-      if (!await onayla({ baslik: 'İÇDER verisi aktarılsın mı?', mesaj: `${y.organizasyonlar.length} organizasyon ve ${k} kurban mevcut verilere eklenecek.`, dugme: 'Aktar' })) return;
+      if (!await onayla({ baslik: 'Veri aktarılsın mı?', mesaj: `${y.organizasyonlar.length} organizasyon ve ${k} kurban mevcut verilere eklenecek.`, dugme: 'Aktar' })) return;
       const r = await api('POST', '/yedek/icder-aktar', { yedek: y });
       bildir(`${r.sayilar.organizasyon} organizasyon, ${r.sayilar.kurban} kurban, ${r.sayilar.hisse} hissedar aktarıldı`, 'basari', 7000); D.git('/kurban');
     } catch (er) { hataGoster(er); } finally { e.target.value = ''; }

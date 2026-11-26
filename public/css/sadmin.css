@@ -52,3 +52,12 @@ body.yonetim .menu a.aktif { background: #1c2a47; }
 .sk-ad { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; }
 .sk-ac { font-size: 12.5px; line-height: 1.55; flex: 1; margin: 0 0 12px; }
 .sk-eylem { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* Abonelik/ödeme yönetim kartlarında iç boşluk (kart-govde kullanılmayan yerler) */
+.saglayici-kart { padding: 18px; }
+.kart > .arac-bar { padding: 14px 16px 0; margin-bottom: 14px; }
+.kart > .form-izgara { margin: 16px 20px 20px; }
+.kart > .ozellik-izgara { margin: 0 20px; }
+.kart > .form-izgara.mod-limit { margin-top: 0; }
+.kart > h4 { margin-left: 20px; margin-right: 20px; }
+.kart > .form-eylem, .kart > p.soluk { margin-left: 20px; margin-right: 20px; margin-bottom: 16px; }

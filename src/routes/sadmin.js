@@ -197,7 +197,7 @@ module.exports = function (app) {
   r.post('/hesaplar/:id/icder-aktar', super_, { limit: 100 * 1024 * 1024 }, (req) => {
     const h = db().prepare('SELECT id FROM hesaplar WHERE id=?').get(+req.params.id); if (!h) throw hata(404, 'Hesap bulunamadı');
     const say = Y.icderAktar(h.id, req.body.yedek);
-    O.denetimYaz(req, 'Eski İÇDER verisi aktarıldı (yönetici)', 'hesap:' + h.id, { hesap_id: h.id, ...say });
+    O.denetimYaz(req, 'Eski eski kurban programı verisi aktarıldı (yönetici)', 'hesap:' + h.id, { hesap_id: h.id, ...say });
     return { ok: true, sayilar: say };
   });
   r.delete('/hesaplar/:id', super_, (req) => {

@@ -203,7 +203,7 @@ const SAYFA = {
     const h = v.hesap; const s = v.istatistik;
     const sup = A.rol === 'super', yaz = A.rol !== 'izleyici';
     yerlestir(kok, html`${sayfaBaslik({ baslik: h.ad, alt: html`${TUR[h.tur]} · #${h.id} · ${durumRozet(h.durum)} · oluşturma ${tarih(h.olusturma)}`, kirinti: [{ ad: 'Hesaplar', rota: '/sadmin/hesaplar' }, { ad: h.ad }],
-      eylemler: html`${sup ? html`<button class="dugme" data-eylem="yedek"><i class="fa-solid fa-download"></i>Yedek</button><button class="dugme" data-eylem="icder"><i class="fa-solid fa-file-import"></i>İÇDER aktar</button><button class="dugme birincil" data-eylem="eris"><i class="fa-solid fa-right-to-bracket"></i>Destek için hesaba gir</button>` : ''}` })}
+      eylemler: html`${sup ? html`<button class="dugme" data-eylem="yedek"><i class="fa-solid fa-download"></i>Yedek</button><button class="dugme" data-eylem="icder"><i class="fa-solid fa-file-import"></i>Kurban yedeği aktar</button><button class="dugme birincil" data-eylem="eris"><i class="fa-solid fa-right-to-bracket"></i>Destek için hesaba gir</button>` : ''}` })}
       <div class="kpi-sira">${[['Kurban org.', s.organizasyon], ['Hissedar', s.hisse], ['Modül kaydı', s.kayit], ['Cari', s.cari], ['Belge', s.belge], ['Kasa hareketi', s.finans_hareketi], ['Personel', s.personel], ['Medya', s.medya]].map(([a, x]) => kpi({ etiket: a, deger: sayi(x), tur: 'notr' }))}</div>
       <div class="izgara izgara-3-1"><div>
         <form class="kart" id="hd-form"><div class="kart-baslik"><h2>Hesap ayarları</h2></div><div class="kart-govde form-izgara">

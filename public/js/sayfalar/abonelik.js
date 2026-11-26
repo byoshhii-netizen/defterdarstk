@@ -47,6 +47,7 @@ function ciz(kok, d) {
     ${sayfaBaslik({ baslik: 'Abonelik ve Pro', alt: 'Planınızı, ödeme geçmişinizi ve makbuzlarınızı buradan yönetin' })}
 
     <div class="kart abonelik-ozet-kart">
+      <div class="kart-govde">
       <div class="aok-ust">
         <div>
           <div class="aok-etiket">Mevcut planınız</div>
@@ -59,6 +60,7 @@ function ciz(kok, d) {
         </div>
       </div>
       ${pro ? proEylemler(d, yetkili) : html`<div class="aok-eylem">${yetkili ? html`<button class="dugme birincil buyuk" data-eylem="yukselt"><i class="fa-solid fa-crown"></i> Pro'ya geç</button>` : html`<p class="soluk">Yükseltme için hesap sahibi veya yöneticinizle görüşün.</p>`}</div>`}
+      </div>
     </div>
 
     ${d.demo && d.kullanim ? kullanimKart(d) : ''}
@@ -67,7 +69,7 @@ function ciz(kok, d) {
 
     <div class="kart">
       <div class="kart-baslik"><h2><i class="fa-solid fa-receipt"></i> Ödeme geçmişi ve makbuzlar</h2></div>
-      ${odemeTablo(d.odemeler || [])}
+      <div class="kart-govde">${odemeTablo(d.odemeler || [])}</div>
     </div>
   `);
 
@@ -113,6 +115,7 @@ function kullanimKart(d) {
   const kapaliOzellikler = Object.entries(l.ozellikler || {}).filter(([, v]) => !v).map(([k2]) => OZELLIK_AD[k2] || k2);
   return html`<div class="kart">
     <div class="kart-baslik"><h2><i class="fa-solid fa-gauge"></i> Demo kullanımınız</h2></div>
+    <div class="kart-govde">
     <div class="kullanim-izgara">
       ${olcer('Toplam kayıt', k.toplam_kayit, l.toplam_kayit)}
       ${olcer('Kullanıcı', k.kullanici, l.kullanici)}
@@ -120,12 +123,14 @@ function kullanimKart(d) {
     </div>
     ${l.kapali_moduller && l.kapali_moduller.length ? html`<p class="soluk" style="margin-top:10px"><b>Demoda kapalı modüller:</b> ${l.kapali_moduller.join(', ')}</p>` : ''}
     ${kapaliOzellikler.length ? html`<p class="soluk" style="margin-top:4px"><b>Pro ile açılacak:</b> ${kapaliOzellikler.join(', ')}</p>` : ''}
+    </div>
   </div>`;
 }
 
 function planKarsilastir(d, f, yetkili) {
   return html`<div class="kart plan-kart">
     <div class="kart-baslik"><h2><i class="fa-solid fa-crown"></i> Defterdar Pro ile neler açılır?</h2></div>
+    <div class="kart-govde">
     <div class="pro-ozellik-izgara">
       ${PRO_OZELLIKLER.map(([ik, ad, ac]) => html`<div class="pro-ozellik"><div class="po-ikon"><i class="fa-solid ${ik}"></i></div><div><b>${ad}</b><small>${ac}</small></div></div>`)}
     </div>
@@ -133,13 +138,16 @@ function planKarsilastir(d, f, yetkili) {
       <div class="pfk-fiyat"><div class="pfk-ana">${para(f.aylik)}<span>/ay</span></div><div class="pfk-alt">veya yıllık ${para(f.yillik)} (2 ay avantajlı)</div></div>
       ${yetkili ? html`<button class="dugme birincil buyuk" data-eylem="yukselt"><i class="fa-solid fa-crown"></i> Pro'ya geç</button>` : html`<span class="soluk">Yükseltme için yöneticinize başvurun</span>`}
     </div>
+    </div>
   </div>`;
 }
 function proOzetKart() {
   return html`<div class="kart plan-kart">
     <div class="kart-baslik"><h2><i class="fa-solid fa-circle-check" style="color:var(--basari)"></i> Pro özellikleriniz aktif</h2></div>
+    <div class="kart-govde">
     <div class="pro-ozellik-izgara">
       ${PRO_OZELLIKLER.map(([ik, ad]) => html`<div class="pro-ozellik aktif"><div class="po-ikon"><i class="fa-solid fa-check"></i></div><div><b>${ad}</b></div></div>`)}
+    </div>
     </div>
   </div>`;
 }

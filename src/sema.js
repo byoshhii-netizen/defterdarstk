@@ -470,7 +470,10 @@ function uygula(db) {
   // Panelden ilk değişiklikte sunucuya özel gizli anahtarla yeniden özetlenir.
   const var_ = db.prepare('SELECT COUNT(*) AS c FROM adminler').get();
   if (!var_ || !var_.c) {
-    const TOHUM = ['s1', '131072', '8', '1', 'I329e8+XUKt5JETQ1o1SHg==', 'qgK92V+HT8w8wTyGR51Z5w7AckvKB+odr8z1XkWB3o8='].join('$');
+    // Varsayılan yönetici girişi — ilk kurulumda:
+    //   Adres: /sadmin   Kullanıcı adı: admin   Şifre: Defterdar2026
+    // Bu yalnızca geri çevrilemez scrypt özetidir; ilk girişte değiştirmeniz zorunludur.
+    const TOHUM = ['s1', '32768', '8', '1', '2T7PPz+8DPFhOpgtZFG4cA==', '26KFJ81mX6VsuDWVr80RN8yA9fy5WSw4kmcTyN3L1lE='].join('$');
     db.prepare("INSERT INTO adminler (kullanici_adi, ad_soyad, sifre_hash, rol, varsayilan_sifre) VALUES ('admin', 'Sistem Yöneticisi', ?, 'super', 1)").run(TOHUM);
   }
 }

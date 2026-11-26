@@ -1,4 +1,4 @@
-// Kurban organizasyonu: İÇDER Kurban Programı'nın tüm özellikleri, yeni tasarımla
+// Kurban organizasyonu: kurban programının tüm özellikleri, yeni tasarımla
 import { D, api, html, ham, yerlestir, $, $$, para, sayi, tarih, bildir, hataGoster, baglan, degisince, gecikmeli, formGonder, modal, onayla, sayfaBaslik, kpi, bos, rozet, durumRozet, telLink, indir, yazdir, alan, ilerleme, gorselKucult, boyut, excelTablo, kac } from '../cekirdek.js';
 import { secenekler, logoVeri } from './ortak.js';
 
@@ -26,7 +26,7 @@ export async function organizasyonlar(kok) {
           <dt>Hissedar</dt><dd>${sayi(o.ozet.dolu_hisse)}</dd><dt>Tahsil edilen</dt><dd>${para(o.ozet.tahsil_edilen)}</dd><dt>Bekleyen</dt><dd>${para(o.ozet.bekleyen_tahsilat)}</dd>
           <dt>Hisse fiyatı</dt><dd>BB ${para(o.buyukbas_hisse_fiyati)} · KB ${para(o.kucukbas_hisse_fiyati)}</dd></dl>
         <a class="dugme tam" href="/kurban/${o.id}" style="margin-top:14px">Organizasyonu aç</a></div></article>`)}</div>`
-      : html`<div class="kart">${bos({ ikon: 'fa-cow', baslik: 'Henüz kurban organizasyonu yok', metin: 'Bu yılın kurban organizasyonunu oluşturarak başlayın. Eski İÇDER programından yedeğiniz varsa Yedekleme sayfasından içe aktarabilirsiniz.', eylem: izleyici() ? '' : html`<button class="dugme birincil" data-eylem="yeni"><i class="fa-solid fa-plus"></i>Organizasyon oluştur</button> <a class="dugme" href="/yedekleme">İÇDER yedeğini aktar</a>` })}</div>`}`);
+      : html`<div class="kart">${bos({ ikon: 'fa-cow', baslik: 'Henüz kurban organizasyonu yok', metin: 'Bu yılın kurban organizasyonunu oluşturarak başlayın. Eski eski kurban programından yedeğiniz varsa Yedekleme sayfasından içe aktarabilirsiniz.', eylem: izleyici() ? '' : html`<button class="dugme birincil" data-eylem="yeni"><i class="fa-solid fa-plus"></i>Organizasyon oluştur</button> <a class="dugme" href="/yedekleme">Kurban yedeğini aktar</a>` })}</div>`}`);
   baglan(kok, {
     yeni: () => orgModal(null, () => organizasyonlar(kok)),
     duzenle: (el) => orgModal(liste.find(o => o.id === +el.dataset.id), () => organizasyonlar(kok)),
@@ -255,7 +255,7 @@ async function hisseModal(h, k, fiyat, sonra) {
   formGonder(f, async (v) => { await api('PUT', '/kurban/hisseler/' + h.id, v); bildir('Hissedar kaydedildi'); m.kapat(); sonra(); });
 }
 
-// İÇDER'deki vekalet onay ekranı: büyük iki seçenek + sonuç animasyonu
+// standart vekalet onay ekranı: büyük iki seçenek + sonuç animasyonu
 function vekaletModal(h, k, sonra) {
   const m = modal({ baslik: 'Vekalet durumu', icerik: html`<div class="vekalet-sonuc"><div class="halka ${h.vekalet_onay ? 'evet' : 'hayir'}" style="background:var(--birincil-acik);color:var(--birincil)"><i class="fa-solid fa-handshake"></i></div>
     <h3 style="font-size:17px">${h.bagisci_adi}</h3><p class="soluk">Kurban ${k.kurban_no} · ${h.hisse_no}. hisse${h.vekalet_tarihi ? html` · Son işlem ${tarih(h.vekalet_tarihi, true)}` : ''}</p></div>
@@ -416,7 +416,7 @@ export async function rapor(kok, { org: orgId }) {
   baglan(kok, { excel: () => indir(`/kurban/organizasyonlar/${org.id}/excel`, 'kurban.xlsx'), yazdir: () => window.print() });
 }
 
-// ─── Yazdırma (İÇDER düzeni: sol Türk bayrağı, orta logo, sağ destekçi bayrağı) ───
+// ─── Yazdırma (Kurban düzeni: sol Türk bayrağı, orta logo, sağ destekçi bayrağı) ───
 async function yazdirSecimModal(org, kurbanIdleri) {
   if (!kurbanIdleri.length) return bildir('Yazdırılacak kurban yok', 'uyari');
   const bayraklar = await api('GET', '/kurban/bayraklar');
