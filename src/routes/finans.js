@@ -95,6 +95,7 @@ function urunStoklari(hesapId) {
 module.exports = function (app) {
   const r = app.yonlendirici('/api');
   r.use(O.kullaniciGerekli); r.use(O.yazmaYetkisi);
+  r.use(require('../lib/abonelik').katman);
 
   // ─── Kategoriler ───
   r.get('/kategoriler', (req) => {

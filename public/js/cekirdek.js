@@ -65,6 +65,7 @@ export async function api(metod, yol, govde, secenek = {}) {
   if (!r.ok) {
     if (r.status === 401 && !secenek.sessiz && D.yetkisiz) D.yetkisiz();
     if (r.status === 503 && j && j.sistem_modu && D.bakim) D.bakim(j);
+    if (r.status === 402 && j && j.yukseltme && !secenek.sessiz && D.yukselt) D.yukselt(j);
     throw new ApiHata((j && j.hata) || 'İşlem tamamlanamadı', r.status, j);
   }
   return j;

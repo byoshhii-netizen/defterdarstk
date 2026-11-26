@@ -1,5 +1,37 @@
 // Defterdar uygulama kabuğu: Türkçe rotalar, menü, oturum, komut paleti
-import { D, api, html, yerlestir, $, $$, kac, bildir, hataGoster, baglan, formGonder, alan, modal, gecikmeli, goreceli } from './cekirdek.js';
+import { D, api, html, yerlestir, $, $$, kac, bildir, hataGoster, baglan, formGonder, alan, modal, gecikmeli, goreceli, tarih } from './cekirdek.js';
+
+// ─── Görünüm: tema (açık/koyu/sistem) + vurgu rengi ───
+function cozTema(v) { return v === 'koyu' ? 'koyu' : v === 'acik' ? 'acik' : (matchMedia('(prefers-color-scheme: dark)').matches ? 'koyu' : 'acik'); }
+export function gorunumUygula() {
+  document.documentElement.dataset.tema = cozTema(localStorage.getItem('dd-tema') || 'sistem');
+  const v = localStorage.getItem('dd-vurgu');
+  if (v) document.documentElement.dataset.vurgu = v; else delete document.documentElement.dataset.vurgu;
+  const ti = $('[data-eylem="tema"] i'); if (ti) ti.className = 'fa-solid ' + (document.documentElement.dataset.tema === 'koyu' ? 'fa-sun' : 'fa-moon');
+}
+gorunumUygula();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if ((localStorage.getItem('dd-tema') || 'sistem') === 'sistem') gorunumUygula(); });
+D.gorunumUygula = gorunumUygula;
+
+const VURGULAR = [['', 'Lacivert', '#1f4e8c'], ['gok', 'Gökyüzü', '#2563eb'], ['okyanus', 'Okyanus', '#0d9488'], ['zumrut', 'Zümrüt', '#16a34a'], ['menekse', 'Menekşe', '#7c3aed'], ['bordo', 'Bordo', '#be123c'], ['amber', 'Amber', '#c2700c']];
+export function gorunumModal() {
+  if ($('.acilir')) $$('.acilir').forEach(x => x.remove());
+  const temaSec = localStorage.getItem('dd-tema') || 'sistem';
+  const vurgu = localStorage.getItem('dd-vurgu') || '';
+  const m = modal({ baslik: 'Görünüm', icerik: html`
+    <div class="gorunum-bolum"><span>Tema</span>
+      <div class="tema-secenek" id="tema-sec">
+        <button type="button" class="tema-acik ${temaSec === 'acik' ? 'aktif' : ''}" data-t="acik"><div class="onizleme"><i></i></div>Açık</button>
+        <button type="button" class="tema-koyu ${temaSec === 'koyu' ? 'aktif' : ''}" data-t="koyu"><div class="onizleme"><i></i></div>Koyu</button>
+        <button type="button" class="tema-sistem ${temaSec === 'sistem' ? 'aktif' : ''}" data-t="sistem"><div class="onizleme"></div>Sistem</button>
+      </div></div>
+    <div class="gorunum-bolum"><span>Vurgu rengi</span>
+      <div class="vurgu-izgara" id="vurgu-sec">${VURGULAR.map(([k, ad, renk]) => html`<button type="button" class="vurgu-nokta ${vurgu === k ? 'aktif' : ''}" data-v="${k}" title="${ad}" style="background:${renk}"></button>`)}</div></div>`,
+    altlik: html`<button class="dugme birincil" data-kapat>Tamam</button>` });
+  $('#tema-sec', m.el).addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; localStorage.setItem('dd-tema', b.dataset.t); gorunumUygula(); $$('#tema-sec button', m.el).forEach(x => x.classList.toggle('aktif', x === b)); });
+  $('#vurgu-sec', m.el).addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (!b) return; if (b.dataset.v) localStorage.setItem('dd-vurgu', b.dataset.v); else localStorage.removeItem('dd-vurgu'); gorunumUygula(); $$('#vurgu-sec button', m.el).forEach(x => x.classList.toggle('aktif', x === b)); });
+}
+D.gorunumModal = gorunumModal;
 
 const SAYFA_MODULLERI = {
   panel: () => import('./sayfalar/panel.js'),
@@ -9,6 +41,7 @@ const SAYFA_MODULLERI = {
   rapor: () => import('./sayfalar/rapor.js'),
   personel: () => import('./sayfalar/personel.js'),
   sistem: () => import('./sayfalar/sistem.js'),
+  abonelik: () => import('./sayfalar/abonelik.js'),
   giris: () => import('./sayfalar/giris.js'),
 };
 
@@ -51,6 +84,7 @@ const ROTALAR = [
   ['/islem-gecmisi', 'sistem', 'denetim', 'denetim'],
   ['/ayarlar', 'sistem', 'ayarlar', 'ayarlar'],
   ['/ayarlar/:sekme', 'sistem', 'ayarlar', 'ayarlar'],
+  ['/abonelik', 'abonelik', 'sayfa', 'abonelik'],
   ['/profil', 'sistem', 'profil', null],
 ];
 const ACIK_ROTALAR = { '/giris': 'giris', '/kayit': 'kayit' };
@@ -144,6 +178,32 @@ D.menuYenile = menuYenile;
 D.yetkisiz = () => { D.oturum = null; D.csrf = null; git('/giris?donus=' + encodeURIComponent(location.pathname), { degistir: true }); };
 D.bakim = (v) => bakimEkrani(v);
 
+// Demo kısıtlamasına takılınca açılan yükseltme uyarısı
+let yukseltAcik = false;
+D.yukselt = (bilgi) => {
+  if (yukseltAcik) return; yukseltAcik = true;
+  const rol = D.oturum && D.oturum.kullanici.rol;
+  const yetkili = rol === 'sahip' || rol === 'yonetici';
+  const m = modal({
+    baslik: 'Defterdar Pro gerekiyor', sinif: 'yukselt-modal',
+    icerik: html`<div style="text-align:center;padding:6px 4px">
+      <div class="yukselt-ikon"><i class="fa-solid fa-crown"></i></div>
+      <p style="font-size:15px;margin:14px 0 6px">${(bilgi && bilgi.hata) || 'Bu özellik Pro sürümde kullanılabilir.'}</p>
+      <p class="soluk" style="font-size:13px">Pro ile sınırsız kayıt, tüm modüller, Excel/PDF dışa aktarma, toplu SMS, yedekleme ve ekip kullanıcıları açılır.</p>
+      ${!yetkili ? html`<p class="soluk" style="font-size:12.5px;margin-top:10px">Yükseltme için hesap sahibi veya yöneticinizle görüşün.</p>` : ''}</div>`,
+    altlik: yetkili ? html`<button class="dugme" data-kapat>Şimdi değil</button><button class="dugme birincil" data-git><i class="fa-solid fa-crown"></i> Pro'ya geç</button>`
+      : html`<button class="dugme birincil" data-kapat>Anladım</button>`,
+    kapaninca: () => { yukseltAcik = false; },
+  });
+  const b = m.el.querySelector('[data-git]');
+  if (b) b.addEventListener('click', () => { m.kapat(); git('/abonelik'); });
+};
+
+// Abonelik durumunu sunucudan tazele ve kabuğu güncelle
+D.abonelikYenile = async () => {
+  try { const d = await api('GET', '/abonelik/durum'); if (D.oturum) { D.oturum.abonelik = d; abonelikBandiCiz(); } return d; } catch (e) { /* */ }
+};
+
 function bakimEkrani(v) {
   yerlestir($('#uygulama'), html`<div class="bakim-ekran"><div class="kart"><i class="fa-solid ${v.sistem_modu === 'bakim' ? 'fa-screwdriver-wrench' : 'fa-lock'} buyuk"></i>
     <h1>${v.sistem_modu === 'bakim' ? 'Sistem bakımda' : 'Sistem geçici olarak kapalı'}</h1>
@@ -159,14 +219,14 @@ const ROL_AD = { sahip: 'Hesap sahibi', yonetici: 'Yönetici', muhasebe: 'Muhase
 
 function kabukCiz() {
   const o = D.oturum;
-  const tema = localStorage.getItem('dd-tema') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'koyu' : 'acik');
-  document.documentElement.dataset.tema = tema;
+  gorunumUygula();
+  const tema = document.documentElement.dataset.tema;
   const kapaliDuyurular = JSON.parse(sessionStorage.getItem('dd-duyuru') || '[]');
   yerlestir($('#uygulama'), html`
     ${o.taklit ? html`<div class="taklit-bant"><i class="fa-solid fa-user-shield"></i> Bu hesaba yönetici olarak destek amaçlı erişiyorsunuz. Yaptığınız işlemler kayıt altına alınır. <a href="#" data-eylem="cikis">Erişimi sonlandır</a></div>` : ''}
     <div class="iskelet">
       <aside class="kenar" id="kenar" aria-label="Ana menü">
-        <a class="marka" href="/panel"><span class="muhur"><b>D</b></span><span class="marka-ad">Defterdar<small>${o.hesap.ad}</small></span></a>
+        <a class="marka" href="/panel"><img class="marka-logo" src="/img/defterdar.png" alt="Defterdar" width="38" height="38"><span class="marka-ad">Defterdar<small>${o.hesap.ad}</small></span></a>
         <nav class="menu" id="menu"></nav>
         <div class="kenar-alt"><span>${D.tanimlar.hesapTurleri[o.hesap.tur] ? D.tanimlar.hesapTurleri[o.hesap.tur].kisa : ''} hesabı</span><a href="/ayarlar/moduller">Menüyü düzenle</a></div>
       </aside>
@@ -175,7 +235,7 @@ function kabukCiz() {
           <button class="ikon-dugme menu-ac" data-eylem="menuAc" aria-label="Menüyü aç"><i class="fa-solid fa-bars"></i></button>
           <div class="arama-kutu"><button class="arama-tetik" data-eylem="palet" aria-label="Ara"><i class="fa-solid fa-magnifying-glass"></i><span class="arama-metin">Kayıt, cari, fatura, bağışçı ara veya sayfaya git</span><kbd>Ctrl K</kbd></button></div>
           <div class="ust-sag">
-            <a class="dugme birincil kucuk yeni-kisayol" href="#" data-eylem="hizliEkle"><i class="fa-solid fa-plus"></i><span>Yeni</span></a>
+            <div class="konum-goreli"><a class="dugme birincil kucuk yeni-kisayol" href="#" data-eylem="hizliEkle"><i class="fa-solid fa-plus"></i><span>Yeni</span></a></div>
             <div class="konum-goreli"><button class="ikon-dugme" data-eylem="bildirimler" aria-label="Bildirimler"><i class="fa-regular fa-bell"></i><span class="nokta gizli" id="bildirim-sayac"></span></button></div>
             <button class="ikon-dugme" data-eylem="tema" aria-label="Tema değiştir"><i class="fa-solid ${tema === 'koyu' ? 'fa-sun' : 'fa-moon'}"></i></button>
             <div class="konum-goreli"><button class="kullanici-dugme" data-eylem="kullaniciMenu" aria-haspopup="true"><span class="avatar">${bas(o.kullanici.ad_soyad)}</span><span class="kd-ad">${o.kullanici.ad_soyad}<small>${ROL_AD[o.kullanici.rol]}</small></span></button></div>
@@ -183,12 +243,14 @@ function kabukCiz() {
         </header>
         <main class="icerik">
           ${(o.duyurular || []).filter(d => !kapaliDuyurular.includes(d.id)).map(d => html`<div class="duyuru duyuru-${d.seviye}" data-duyuru="${d.id}"><i class="fa-solid ${d.seviye === 'kritik' ? 'fa-circle-exclamation' : d.seviye === 'uyari' ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i><div><strong>${d.baslik}</strong>${d.icerik ? html`<p>${d.icerik}</p>` : ''}</div><button class="ikon-dugme" data-eylem="duyuruKapat" data-id="${d.id}" aria-label="Kapat"><i class="fa-solid fa-xmark"></i></button></div>`)}
+          <div id="abonelik-bant"></div>
           <div id="icerik"></div>
         </main>
       </div>
     </div>
     <nav class="alt-gezinme" id="alt-gezinme" aria-label="Hızlı gezinme"></nav>`);
   menuCiz();
+  abonelikBandiCiz();
   baglan(document.body, kabukEylemleri);
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); paletAc(); }
@@ -206,6 +268,26 @@ function menuCiz() {
   const ust = m.gruplar.flatMap(g => g.ogeler).filter(o => !['panel', 'ayarlar', 'destek', 'cop', 'yedek', 'denetim'].includes(o.anahtar)).sort((a, b) => b.skor - a.skor).slice(0, 3);
   yerlestir($('#alt-gezinme'), html`<a href="/panel" data-menu="panel"><i class="fa-solid fa-gauge-high"></i>Genel</a>${ust.map(o => html`<a href="${o.rota}" data-menu="${o.anahtar}"><i class="fa-solid ${o.ikon}"></i>${o.ad.split(' ')[0]}</a>`)}<button data-eylem="menuAc"><i class="fa-solid fa-bars"></i>Menü</button>`);
 }
+function abonelikBandiCiz() {
+  const k = $('#abonelik-bant'); if (!k) return;
+  const ab = D.oturum && D.oturum.abonelik;
+  if (!ab || !ab.aktif) { k.innerHTML = ''; return; }
+  const kapali = JSON.parse(sessionStorage.getItem('dd-abonelik-kapat') || '[]');
+  let tur, ikon, metin, dugme = 'Pro\'ya geç', kapatilabilir = false, anahtar = ab.asama;
+  if (ab.asama === 'demo') { tur = 'uyari'; ikon = 'fa-lock'; metin = 'Demo sürümü kullanıyorsunuz. Kayıt sayısı ve bazı özellikler kısıtlı. Tüm özellikler için Pro\'ya geçin.'; }
+  else if (ab.asama === 'deneme') { tur = 'bilgi'; ikon = 'fa-gift'; metin = `Ücretsiz deneme sürenizin bitmesine ${ab.gun_kalan} gün kaldı. Pro\'ya geçerek kesintisiz devam edebilirsiniz.`; kapatilabilir = true; }
+  else if (ab.asama === 'pro_iptal_bekliyor') { tur = 'uyari'; ikon = 'fa-circle-exclamation'; metin = `Aboneliğiniz iptal edildi. Pro erişiminiz ${tarih(ab.donem_bitis)} tarihine kadar devam edecek.`; dugme = 'Aboneliği sürdür'; kapatilabilir = true; }
+  else if (ab.asama === 'gecikti') { tur = 'kritik'; ikon = 'fa-triangle-exclamation'; metin = 'Son ödemeniz alınamadı. Pro erişiminizin kesilmemesi için ödeme yönteminizi güncelleyin.'; }
+  else { k.innerHTML = ''; return; }
+  if (kapatilabilir && kapali.includes(anahtar)) { k.innerHTML = ''; return; }
+  yerlestir(k, html`<div class="duyuru abonelik-bant abonelik-${anahtar} duyuru-${tur}">
+    <i class="fa-solid ${ikon}"></i>
+    <div><strong>${metin}</strong></div>
+    <a class="dugme kucuk birincil" href="/abonelik"><i class="fa-solid fa-crown"></i> ${dugme}</a>
+    ${kapatilabilir ? html`<button class="ikon-dugme" data-eylem="abonelikBantKapat" data-anahtar="${anahtar}" aria-label="Kapat"><i class="fa-solid fa-xmark"></i></button>` : ''}</div>`);
+}
+D.abonelikBandiCiz = abonelikBandiCiz;
+
 function menuIsaretle(anahtar, yol) {
   D.aktifMenu = anahtar;
   $$('[data-menu]').forEach(a => a.classList.toggle('aktif', a.dataset.menu === anahtar));
@@ -226,10 +308,13 @@ function acilirKapat() { $$('.acilir').forEach(x => x.remove()); }
 document.addEventListener('click', (e) => { if (!e.target.closest('.acilir') && !e.target.closest('[data-eylem="kullaniciMenu"],[data-eylem="bildirimler"],[data-eylem="hizliEkle"]')) acilirKapat(); });
 
 function acilir(tetik, sablon) {
-  const var_ = tetik.parentElement.querySelector('.acilir');
+  // Açılır menü daima tetikleyen butonun kendi konumlu sarmalayıcısına bağlanır;
+  // böylece başka bir butonun yanında/başka menüyle birlikte görünmez.
+  const kap = tetik.closest('.konum-goreli') || tetik.parentElement;
+  const var_ = kap.querySelector('.acilir');
   acilirKapat(); if (var_) return;
   const d = document.createElement('div'); d.className = 'acilir'; yerlestir(d, sablon);
-  tetik.parentElement.appendChild(d);
+  kap.appendChild(d);
   d.addEventListener('click', (e) => { if (e.target.closest('a')) acilirKapat(); });
   return d;
 }
@@ -237,6 +322,7 @@ function acilir(tetik, sablon) {
 const kabukEylemleri = {
   menuAc: () => document.body.classList.toggle('menu-acik'),
   palet: () => paletAc(),
+  gorunum: () => gorunumModal(),
   tema: (el) => {
     const yeni = document.documentElement.dataset.tema === 'koyu' ? 'acik' : 'koyu';
     document.documentElement.dataset.tema = yeni; localStorage.setItem('dd-tema', yeni);
@@ -246,11 +332,15 @@ const kabukEylemleri = {
     const l = JSON.parse(sessionStorage.getItem('dd-duyuru') || '[]'); l.push(+el.dataset.id);
     sessionStorage.setItem('dd-duyuru', JSON.stringify(l)); el.closest('.duyuru').remove();
   },
+  abonelikBantKapat: (el) => {
+    const l = JSON.parse(sessionStorage.getItem('dd-abonelik-kapat') || '[]'); l.push(el.dataset.anahtar);
+    sessionStorage.setItem('dd-abonelik-kapat', JSON.stringify(l)); el.closest('.abonelik-bant').remove();
+  },
   kullaniciMenu: (el) => {
     const k = D.oturum.kullanici;
     acilir(el, html`<div class="acilir-baslik"><strong style="color:var(--metin)">${k.ad_soyad}</strong><br>${k.eposta}</div><hr>
       <a href="/profil"><i class="fa-solid fa-user"></i>Profil ve güvenlik</a><a href="/ayarlar"><i class="fa-solid fa-gear"></i>Ayarlar</a>
-      <a href="/ayarlar/moduller"><i class="fa-solid fa-table-cells-large"></i>Modüller ve menü</a><a href="/destek"><i class="fa-solid fa-life-ring"></i>Destek</a><hr>
+      <a href="/ayarlar/moduller"><i class="fa-solid fa-table-cells-large"></i>Modüller ve menü</a><a href="/abonelik"><i class="fa-solid fa-crown"></i>Abonelik ve Pro</a><button data-eylem="gorunum"><i class="fa-solid fa-palette"></i>Görünüm ve tema</button><a href="/destek"><i class="fa-solid fa-life-ring"></i>Destek</a><hr>
       <button data-eylem="cikis"><i class="fa-solid fa-right-from-bracket"></i>Çıkış yap</button>`);
   },
   bildirimler: (el) => {

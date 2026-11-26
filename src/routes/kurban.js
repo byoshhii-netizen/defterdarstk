@@ -85,6 +85,7 @@ function orgOzet(hesapId, org) {
 module.exports = function (app) {
   const r = app.yonlendirici('/api/kurban');
   r.use(O.kullaniciGerekli); r.use(O.yazmaYetkisi);
+  r.use(require('../lib/abonelik').katman);
 
   r.get('/sabitler', () => ({ kurban_turleri: KURBAN_TURLERI }));
 

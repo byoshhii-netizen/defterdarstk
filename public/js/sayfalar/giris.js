@@ -16,7 +16,7 @@ function sag() {
   </aside>`;
 }
 function iskelet(icerik, genis = false) {
-  return html`<div class="giris-sayfa"><section class="giris-sol"><a class="marka" href="/giris"><span class="muhur"><b>D</b></span><span class="marka-ad">Defterdar</span></a>
+  return html`<div class="giris-sayfa"><section class="giris-sol"><a class="marka" href="/giris"><img class="marka-logo" src="/img/defterdar.png" alt="Defterdar" width="40" height="40"><span class="marka-ad">Defterdar</span></a>
     <div class="giris-form-kap"><div class="giris-form ${genis ? 'genis' : ''}">${icerik}</div></div>
     <p class="soluk" style="font-size:12px">Verileriniz şifreli oturumlarla korunur ve yalnızca kurumunuzun kullanıcılarına açıktır.</p></section>${sag()}</div>`;
 }

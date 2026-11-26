@@ -99,6 +99,7 @@ const MODULLER = [
   { anahtar: 'cop', ad: 'Çöp kutusu', grup: 'sistem', ikon: 'fa-trash-can', rota: '/cop-kutusu', sabit: true },
   { anahtar: 'yedek', ad: 'Yedekleme', grup: 'sistem', ikon: 'fa-database', rota: '/yedekleme', sabit: true, minRol: 'yonetici' },
   { anahtar: 'denetim', ad: 'İşlem geçmişi', grup: 'sistem', ikon: 'fa-clock-rotate-left', rota: '/islem-gecmisi', sabit: true, minRol: 'yonetici' },
+  { anahtar: 'abonelik', ad: 'Abonelik ve Pro', grup: 'sistem', ikon: 'fa-crown', rota: '/abonelik', sabit: true, minRol: 'yonetici' },
   { anahtar: 'ayarlar', ad: 'Ayarlar', grup: 'sistem', ikon: 'fa-gear', rota: '/ayarlar', sabit: true },
 ];
 

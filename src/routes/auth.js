@@ -74,6 +74,7 @@ module.exports = function (app) {
     });
     req.hesapId = sonuc.hesapId;
     req.kullanici = { id: sonuc.kullaniciId, ad_soyad: adSoyad };
+    try { require('../lib/abonelik').yeniDemo(sonuc.hesapId); } catch (e) { /* */ }
     O.denetimYaz(req, 'Hesap oluşturuldu', 'hesap', { tur, faaliyetler });
     O.girisKaydi(req, 'kullanici', eposta, true, 'kayıt');
     O.oturumAc(req, res, { tip: 'kullanici', sahipId: sonuc.kullaniciId, hesapId: sonuc.hesapId });
@@ -133,6 +134,7 @@ module.exports = function (app) {
       menu: menuHesapla(req),
       tanimlar: tanimlar(),
       duyurular, destekYeni,
+      abonelik: require('../lib/abonelik').ozet(req.hesapId),
       site_adi: O.ayar('site_adi', 'Defterdar'),
     };
   });

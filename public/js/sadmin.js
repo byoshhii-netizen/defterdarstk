@@ -6,15 +6,38 @@ const TUR = { stk: 'STK', sirket: 'Şirket', muhasebe: 'Muhasebe', esnaf: 'Esnaf
 const ROL = { super: 'Süper yönetici', destek: 'Destek', izleyici: 'İzleyici' };
 let A = null;
 
+// ─── Görünüm: tema + vurgu (kullanıcı tarafıyla ortak localStorage) ───
+const VURGULAR = [['', 'Lacivert', '#1f4e8c'], ['gok', 'Gökyüzü', '#2563eb'], ['okyanus', 'Okyanus', '#0d9488'], ['zumrut', 'Zümrüt', '#16a34a'], ['menekse', 'Menekşe', '#7c3aed'], ['bordo', 'Bordo', '#be123c'], ['amber', 'Amber', '#c2700c']];
+function cozTema(v) { return v === 'koyu' ? 'koyu' : v === 'acik' ? 'acik' : (matchMedia('(prefers-color-scheme: dark)').matches ? 'koyu' : 'acik'); }
+function gorunumUygula() {
+  document.documentElement.dataset.tema = cozTema(localStorage.getItem('dd-tema') || 'sistem');
+  const v = localStorage.getItem('dd-vurgu'); if (v) document.documentElement.dataset.vurgu = v; else delete document.documentElement.dataset.vurgu;
+}
+gorunumUygula();
+function gorunumModal() {
+  const temaSec = localStorage.getItem('dd-tema') || 'sistem', vurgu = localStorage.getItem('dd-vurgu') || '';
+  const m = modal({ baslik: 'Görünüm', icerik: html`
+    <div class="gorunum-bolum"><span>Tema</span><div class="tema-secenek" id="ts">
+      <button type="button" class="tema-acik ${temaSec === 'acik' ? 'aktif' : ''}" data-t="acik"><div class="onizleme"><i></i></div>Açık</button>
+      <button type="button" class="tema-koyu ${temaSec === 'koyu' ? 'aktif' : ''}" data-t="koyu"><div class="onizleme"><i></i></div>Koyu</button>
+      <button type="button" class="tema-sistem ${temaSec === 'sistem' ? 'aktif' : ''}" data-t="sistem"><div class="onizleme"></div>Sistem</button></div></div>
+    <div class="gorunum-bolum"><span>Vurgu rengi</span><div class="vurgu-izgara" id="vs">${VURGULAR.map(([k, ad, renk]) => html`<button type="button" class="vurgu-nokta ${vurgu === k ? 'aktif' : ''}" data-v="${k}" title="${ad}" style="background:${renk}"></button>`)}</div></div>`,
+    altlik: html`<button class="dugme birincil" data-kapat>Tamam</button>` });
+  $('#ts', m.el).addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (!b) return; localStorage.setItem('dd-tema', b.dataset.t); gorunumUygula(); $$('#ts button', m.el).forEach(x => x.classList.toggle('aktif', x === b)); });
+  $('#vs', m.el).addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (!b) return; if (b.dataset.v) localStorage.setItem('dd-vurgu', b.dataset.v); else localStorage.removeItem('dd-vurgu'); gorunumUygula(); $$('#vs button', m.el).forEach(x => x.classList.toggle('aktif', x === b)); });
+}
+
 const ROTALAR = [
   ['/sadmin', 'panel'], ['/sadmin/hesaplar', 'hesaplar'], ['/sadmin/hesaplar/:id', 'hesapDetay'], ['/sadmin/kullanicilar', 'kullanicilar'],
   ['/sadmin/destek', 'destek'], ['/sadmin/destek/:id', 'destekDetay'], ['/sadmin/duyurular', 'duyurular'], ['/sadmin/moduller', 'moduller'],
   ['/sadmin/sistem', 'sistem'], ['/sadmin/guvenlik', 'guvenlik'], ['/sadmin/denetim', 'denetim'], ['/sadmin/yedekler', 'yedekler'],
   ['/sadmin/yoneticiler', 'yoneticiler'], ['/sadmin/hesabim', 'hesabim'],
+  ['/sadmin/abonelikler', 'abonelikler'], ['/sadmin/odemeler', 'odemeler'], ['/sadmin/odeme-saglayicilar', 'saglayicilar'], ['/sadmin/abonelik-ayarlari', 'abonelikAyar'],
 ];
 const MENU = [
   ['Genel', [['/sadmin', 'fa-gauge-high', 'Genel bakış']]],
   ['Müşteriler', [['/sadmin/hesaplar', 'fa-building', 'Hesaplar'], ['/sadmin/kullanicilar', 'fa-users', 'Kullanıcılar'], ['/sadmin/destek', 'fa-life-ring', 'Destek talepleri'], ['/sadmin/duyurular', 'fa-bullhorn', 'Duyurular']]],
+  ['Gelir ve abonelik', [['/sadmin/abonelikler', 'fa-crown', 'Abonelikler'], ['/sadmin/odemeler', 'fa-receipt', 'Ödemeler'], ['/sadmin/odeme-saglayicilar', 'fa-credit-card', 'Ödeme yöntemleri'], ['/sadmin/abonelik-ayarlari', 'fa-sliders', 'Plan ve demo ayarları']]],
   ['Platform', [['/sadmin/moduller', 'fa-table-cells-large', 'Modüller ve algoritma'], ['/sadmin/sistem', 'fa-sliders', 'Sistem ayarları'], ['/sadmin/yedekler', 'fa-database', 'Yedekler']]],
   ['Güvenlik', [['/sadmin/guvenlik', 'fa-shield-halved', 'Güvenlik merkezi'], ['/sadmin/denetim', 'fa-clock-rotate-left', 'Denetim kaydı'], ['/sadmin/yoneticiler', 'fa-user-shield', 'Yöneticiler'], ['/sadmin/hesabim', 'fa-key', 'Hesabım ve 2FA']]],
 ];
@@ -58,7 +81,7 @@ async function isle() {
 function girisEkrani(adim = 'sifre', bilgiler = {}) {
   document.title = 'Yönetici girişi — Defterdar';
   yerlestir($('#uygulama'), html`<div class="ag-giris"><div class="ag-kutu">
-    <div class="ag-ust"><span class="muhur"><b>D</b></span><div><strong>Defterdar</strong><small>Yönetim paneli</small></div></div>
+    <div class="ag-ust"><img class="marka-logo buyuk" src="/img/defterdar.png" alt="Defterdar" width="46" height="46"><div><strong>Defterdar</strong><small>Yönetim paneli</small></div></div>
     <div class="ag-govde">${adim === 'sifre' ? html`<h1>Yönetici girişi</h1><p>Bu alan yalnızca yetkili yöneticiler içindir. Tüm denemeler IP adresiyle kayıt altına alınır.</p>
       <form id="ag-form" novalidate autocomplete="on"><div id="hata"></div>
         ${alan({ ad: 'kullanici_adi', etiket: 'Kullanıcı adı', zorunlu: true, deger: bilgiler.kullanici_adi || '', ek: 'autocomplete="username" autocapitalize="none" spellcheck="false" autofocus' })}
@@ -96,7 +119,7 @@ function girisEkrani(adim = 'sifre', bilgiler = {}) {
 }
 
 function sifreZorunlu() {
-  yerlestir($('#uygulama'), html`<div class="ag-giris"><div class="ag-kutu"><div class="ag-ust"><span class="muhur"><b>D</b></span><div><strong>Varsayılan şifreyi değiştirin</strong><small>${A.kullanici_adi}</small></div></div>
+  yerlestir($('#uygulama'), html`<div class="ag-giris"><div class="ag-kutu"><div class="ag-ust"><img class="marka-logo buyuk" src="/img/defterdar.png" alt="Defterdar" width="46" height="46"><div><strong>Varsayılan şifreyi değiştirin</strong><small>${A.kullanici_adi}</small></div></div>
     <div class="ag-govde"><p>Güvenliğiniz için ilk girişte varsayılan yönetici şifresini değiştirmeniz gerekiyor. Yeni şifre sunucuya özel gizli anahtarla özetlenerek saklanır; kaynak kodda veya veritabanında açık metin olarak bulunmaz.</p>
       <form id="sz-form" novalidate><div id="hata"></div>${alan({ ad: 'mevcut', etiket: 'Mevcut şifre', tip: 'password', zorunlu: true, ek: 'autocomplete="current-password"' })}
         ${alan({ ad: 'yeni', etiket: 'Yeni şifre', tip: 'password', zorunlu: true, yardim: 'En az 10 karakter; harf ve rakam içermeli', ek: 'autocomplete="new-password"' })}${alan({ ad: 'yeni2', etiket: 'Yeni şifre (tekrar)', tip: 'password', zorunlu: true, ek: 'autocomplete="new-password"' })}
@@ -110,16 +133,17 @@ function sifreZorunlu() {
 
 function kabuk() {
   document.title = 'Yönetim — Defterdar';
-  document.documentElement.dataset.tema = localStorage.getItem('dd-tema') || 'acik';
-  yerlestir($('#uygulama'), html`<div id="mod-bant"></div><div class="iskelet"><aside class="kenar"><a class="marka" href="/sadmin"><span class="muhur"><b>D</b></span><span class="marka-ad">Defterdar<small><span class="yonetim-rozet"><i class="fa-solid fa-shield-halved"></i>YÖNETİM</span></small></span></a>
+  gorunumUygula();
+  yerlestir($('#uygulama'), html`<div id="mod-bant"></div><div class="iskelet"><aside class="kenar"><a class="marka" href="/sadmin"><img class="marka-logo" src="/img/defterdar.png" alt="Defterdar" width="38" height="38"><span class="marka-ad">Defterdar<small><span class="yonetim-rozet"><i class="fa-solid fa-shield-halved"></i>YÖNETİM</span></small></span></a>
     <nav class="menu" id="menu">${MENU.map(([g, l]) => html`<div class="menu-grup"><h3>${g}</h3>${l.map(([h, i, a]) => html`<a href="${h}"><i class="fa-solid ${i}"></i><span>${a}</span></a>`)}</div>`)}</nav>
     <div class="kenar-alt"><span>${ROL[A.rol]}</span><a href="/" target="_blank" rel="noopener">Uygulamayı aç</a></div></aside>
     <div class="ana"><header class="ust-bar"><button class="ikon-dugme menu-ac" data-eylem="menuAc" aria-label="Menü"><i class="fa-solid fa-bars"></i></button><span class="soluk" id="saat" style="font-size:13px"></span>
-      <div class="ust-sag"><button class="ikon-dugme" data-eylem="tema" aria-label="Tema"><i class="fa-solid fa-circle-half-stroke"></i></button><span class="avatar">${(A.ad_soyad || A.kullanici_adi).slice(0, 2).toLocaleUpperCase('tr-TR')}</span><span style="font-size:13px;font-weight:600">${A.ad_soyad || A.kullanici_adi}</span>
+      <div class="ust-sag"><button class="ikon-dugme" data-eylem="gorunum" aria-label="Görünüm"><i class="fa-solid fa-palette"></i></button><button class="ikon-dugme" data-eylem="tema" aria-label="Tema"><i class="fa-solid fa-circle-half-stroke"></i></button><span class="avatar">${(A.ad_soyad || A.kullanici_adi).slice(0, 2).toLocaleUpperCase('tr-TR')}</span><span style="font-size:13px;font-weight:600">${A.ad_soyad || A.kullanici_adi}</span>
         <button class="dugme kucuk" data-eylem="cikis"><i class="fa-solid fa-right-from-bracket"></i>Çıkış</button></div></header>
       <main class="icerik"><div id="icerik"></div></main></div></div>`);
   baglan(document.body, {
     menuAc: () => document.body.classList.toggle('menu-acik'),
+    gorunum: () => gorunumModal(),
     tema: () => { const y = document.documentElement.dataset.tema === 'koyu' ? 'acik' : 'koyu'; document.documentElement.dataset.tema = y; localStorage.setItem('dd-tema', y); },
     cikis: async () => { await api('POST', '/cikis').catch(() => {}); A = null; D.csrf = null; location.href = '/sadmin'; },
   });
@@ -378,6 +402,221 @@ function gecSifre(s, eposta) {
   $('[data-kopya]', m.el).addEventListener('click', () => { navigator.clipboard.writeText(s); bildir('Kopyalandı'); });
 }
 async function anaIndir(yol, ad) { const r = await anaApi('GET', yol, null, { dosya: true }); const b = await r.blob(); dosyaKaydet(b, ad); }
+
+// ═══════════════ GELİR VE ABONELİK YÖNETİMİ ═══════════════
+const PSEM = { TRY: '₺', USD: '$', EUR: '€' };
+const paraA = (n, p = 'TRY') => sayi(n) + ' ' + (PSEM[p] || p);
+const ayKisa = (d) => { if (!d) return '—'; const [y, m] = String(d).split('-'); return new Date(+y, +m - 1, 1).toLocaleDateString('tr-TR', { month: 'short' }); };
+const AB_DURUM = { aktif: ['basari', 'Aktif'], deneme: ['bilgi', 'Deneme'], iptal: ['uyari', 'İptal'], gecikti: ['tehlike', 'Gecikti'], bitti: ['notr', 'Bitti'], odeme_bekliyor: ['uyari', 'Ödeme bekliyor'] };
+
+SAYFA.abonelikler = async (kok, params, sorgu) => {
+  const qs = new URLSearchParams(Object.entries(sorgu).filter(([, v]) => v)).toString();
+  const [o, liste] = await Promise.all([api('GET', '/abonelik-ozet'), api('GET', '/abonelikler' + (qs ? '?' + qs : ''))]);
+  const seri = [...(o.aylik_seri || [])].reverse();
+  yerlestir(kok, html`${sayfaBaslik({ baslik: 'Abonelikler', alt: 'Pro aboneler, denemeler ve gelir' })}
+    <div class="kpi-sira">
+      ${kpi({ etiket: 'Pro abone', deger: sayi(o.pro), tur: 'basari', ikon: 'fa-crown' })}
+      ${kpi({ etiket: 'Denemede', deger: sayi(o.deneme), tur: 'bilgi', ikon: 'fa-gift' })}
+      ${kpi({ etiket: 'Demo', deger: sayi(o.demo), tur: 'notr', ikon: 'fa-lock' })}
+      ${kpi({ etiket: 'Bu ay gelir', deger: paraA(o.gelir_ay), tur: 'muhur', ikon: 'fa-sack-dollar' })}
+      ${kpi({ etiket: 'Toplam gelir', deger: paraA(o.gelir_toplam), tur: 'basari', ikon: 'fa-chart-line' })}
+      ${kpi({ etiket: 'Bekleyen ödeme', deger: sayi(o.bekleyen_odeme), tur: o.bekleyen_odeme ? 'uyari' : 'notr', ikon: 'fa-hourglass-half', rota: '/sadmin/odemeler?durum=bekliyor' })}
+    </div>
+    ${seri.length ? html`<div class="kart"><div class="kart-baslik"><h2>Aylık gelir</h2></div>${cubukGrafik(seri, { anahtarlar: [['tutar', 'Gelir', 'g1']], etiket: (x) => ayKisa(x.donem) })}</div>` : ''}
+    <div class="kart">
+      <div class="arac-bar"><div class="arama"><i class="fa-solid fa-magnifying-glass"></i><input id="q" placeholder="Hesap adı veya e-posta ara" value="${sorgu.q || ''}"></div>
+        <select id="fplan"><option value="">Tüm planlar</option><option value="pro" ${sorgu.plan === 'pro' ? 'selected' : ''}>Pro</option><option value="demo" ${sorgu.plan === 'demo' ? 'selected' : ''}>Demo</option></select>
+        <select id="fdurum"><option value="">Tüm durumlar</option>${Object.entries(AB_DURUM).map(([k, v]) => html`<option value="${k}" ${sorgu.durum === k ? 'selected' : ''}>${v[1]}</option>`)}</select></div>
+      <div class="tablo-kaydir"><table class="tablo">
+        <thead><tr><th>Hesap</th><th>Plan</th><th>Durum</th><th class="sag">Tutar</th><th>Sonraki ödeme</th><th class="sag">Toplam ödenen</th><th></th></tr></thead>
+        <tbody>${liste.length ? liste.map(a => html`<tr>
+          <td><a href="/sadmin/hesaplar/${a.hesap_id}"><b>${a.hesap_ad}</b></a><br><small class="soluk">${a.hesap_eposta || ''}</small></td>
+          <td>${a.plan === 'pro' ? html`<span class="rozet rozet-basari"><i class="fa-solid fa-crown"></i> Pro</span>` : html`<span class="rozet rozet-notr">Demo</span>`}</td>
+          <td><span class="rozet rozet-${(AB_DURUM[a.durum] || ['notr', a.durum])[0]}">${(AB_DURUM[a.durum] || ['notr', a.durum])[1]}</span></td>
+          <td class="sag">${a.plan === 'pro' ? paraA(a.tutar, a.para_birimi) + '/' + (a.periyot === 'yillik' ? 'yıl' : 'ay') : '—'}</td>
+          <td>${a.sonraki_odeme ? tarih(a.sonraki_odeme) : (a.deneme_bitis && a.durum === 'deneme' ? 'Deneme: ' + tarih(a.deneme_bitis) : '—')}</td>
+          <td class="sag">${paraA(a.odenen_toplam)} <small class="soluk">(${a.odeme_sayisi})</small></td>
+          <td class="sag">${A.rol !== 'izleyici' ? html`<button class="ikon-dugme" data-eylem="islem" data-id="${a.hesap_id}" data-ad="${a.hesap_ad}" data-plan="${a.plan}" title="İşlemler"><i class="fa-solid fa-ellipsis-vertical"></i></button>` : ''}</td>
+        </tr>`) : html`<tr><td colspan="7">${bos({ baslik: 'Kayıt yok', ikon: 'fa-crown' })}</td></tr>`}</tbody>
+      </table></div>
+    </div>`);
+  const uygula = () => { const p = new URLSearchParams(); const q = $('#q').value.trim(); if (q) p.set('q', q); if ($('#fplan').value) p.set('plan', $('#fplan').value); if ($('#fdurum').value) p.set('durum', $('#fdurum').value); git('/sadmin/abonelikler' + (p.toString() ? '?' + p : '')); };
+  $('#q').addEventListener('input', gecikmeli(uygula, 400)); $('#fplan').addEventListener('change', uygula); $('#fdurum').addEventListener('change', uygula);
+  baglan(kok, {
+    islem: (el) => abonelikIslemModal(el.dataset.id, el.dataset.ad, el.dataset.plan, () => isle()),
+  });
+};
+
+function abonelikIslemModal(hesapId, ad, plan, sonra) {
+  const m = modal({ baslik: ad + ' — abonelik işlemleri', icerik: html`
+    <div class="islem-liste">
+      <button class="dugme tam" data-is="pro"><i class="fa-solid fa-crown"></i> Pro tanımla / süre uzat</button>
+      <button class="dugme tam" data-is="iptal"><i class="fa-solid fa-ban"></i> Aboneliği iptal et</button>
+      <button class="dugme tam tehlike-metin" data-is="demo"><i class="fa-solid fa-lock"></i> Demo'ya geri al</button>
+      <a class="dugme tam" href="/sadmin/hesaplar/${hesapId}"><i class="fa-solid fa-arrow-up-right-from-square"></i> Hesap detayını aç</a>
+    </div>` });
+  const kapat = () => m.kapat();
+  $$('[data-is]', m.el).forEach(b => b.addEventListener('click', async () => {
+    const is = b.dataset.is;
+    if (is === 'pro') { kapat(); return proTanimlaModal(hesapId, ad, sonra); }
+    if (is === 'iptal') { if (!await onayla({ mesaj: ad + ' aboneliği iptal edilsin mi? Dönem sonuna kadar erişim açık kalır.', dugme: 'İptal et', tehlike: true })) return; await api('POST', `/abonelikler/${hesapId}/iptal`); kapat(); bildir('Abonelik iptal edildi'); sonra(); }
+    if (is === 'demo') { if (!await onayla({ mesaj: ad + ' hemen demoya alınsın mı? Pro erişimi sonlanır.', dugme: 'Demoya al', tehlike: true })) return; await api('POST', `/abonelikler/${hesapId}/demo`); kapat(); bildir('Hesap demoya alındı'); sonra(); }
+  }));
+}
+function proTanimlaModal(hesapId, ad, sonra) {
+  const m = modal({ baslik: ad + ' — Pro tanımla', icerik: html`<form id="pt-form" class="form-izgara">
+    ${alan({ ad: 'periyot', etiket: 'Periyot', tip: 'select', secenekler: [['aylik', 'Aylık'], ['yillik', 'Yıllık']] })}
+    ${alan({ ad: 'ay', etiket: 'Süre (ay)', tip: 'number', deger: 1, yardim: 'Kaç ay eklensin' })}
+    ${alan({ ad: 'odeme_kaydi', etiket: 'Ödeme kaydı oluştur (makbuz)', tip: 'checkbox', tam: true })}
+    ${alan({ ad: 'tutar', etiket: 'Ödeme tutarı (varsa)', tip: 'number', deger: 0 })}
+    ${alan({ ad: 'otomatik_yenile', etiket: 'Otomatik yenilensin', tip: 'checkbox', tam: true })}
+  </form>`, altlik: html`<button class="dugme" data-kapat>Vazgeç</button><button class="dugme birincil" type="submit" form="pt-form">Pro tanımla</button>` });
+  formGonder($('#pt-form', m.el), async (v) => { await api('POST', `/abonelikler/${hesapId}/pro-yap`, v); m.kapat(); bildir(ad + ' için Pro tanımlandı'); sonra(); });
+}
+
+SAYFA.odemeler = async (kok, params, sorgu) => {
+  const qs = new URLSearchParams(Object.entries(sorgu).filter(([, v]) => v)).toString();
+  const liste = await api('GET', '/odemeler' + (qs ? '?' + qs : ''));
+  const DR = { basarili: ['basari', 'Ödendi'], bekliyor: ['uyari', 'Bekliyor'], basarisiz: ['tehlike', 'Başarısız'], iade: ['notr', 'İade'] };
+  yerlestir(kok, html`${sayfaBaslik({ baslik: 'Ödemeler', alt: 'Tüm tahsilatlar ve makbuzlar' })}
+    <div class="kart">
+      <div class="arac-bar"><div class="arama"><i class="fa-solid fa-magnifying-glass"></i><input id="q" placeholder="Hesap veya makbuz no" value="${sorgu.q || ''}"></div>
+        <select id="fd"><option value="">Tüm durumlar</option>${Object.entries(DR).map(([k, v]) => html`<option value="${k}" ${sorgu.durum === k ? 'selected' : ''}>${v[1]}</option>`)}</select></div>
+      <div class="tablo-kaydir"><table class="tablo">
+        <thead><tr><th>Makbuz</th><th>Hesap</th><th>Tarih</th><th>Dönem</th><th>Yöntem</th><th class="sag">Tutar</th><th>Durum</th><th></th></tr></thead>
+        <tbody>${liste.length ? liste.map(o => html`<tr>
+          <td>${o.makbuz_no || '—'}</td>
+          <td><a href="/sadmin/hesaplar/${o.hesap_id}">${o.hesap_ad}</a></td>
+          <td>${tarih(o.tarih, true)}</td><td>${o.donem || '—'}</td>
+          <td>${o.saglayici || '—'}${o.kart_ozet ? html`<br><small class="soluk">${o.kart_ozet}</small>` : ''}</td>
+          <td class="sag"><b>${paraA(o.tutar, o.para_birimi)}</b></td>
+          <td><span class="rozet rozet-${(DR[o.durum] || ['notr', o.durum])[0]}">${(DR[o.durum] || ['notr', o.durum])[1]}</span></td>
+          <td class="sag">
+            ${o.durum === 'basarili' ? html`<a class="ikon-dugme" href="/api/sadmin/odemeler/${o.id}/makbuz" target="_blank" title="Makbuz"><i class="fa-solid fa-eye"></i></a>` : ''}
+            ${A.rol !== 'izleyici' && o.durum === 'bekliyor' ? html`<button class="ikon-dugme" data-eylem="onayla" data-id="${o.id}" title="Ödemeyi onayla"><i class="fa-solid fa-check" style="color:var(--basari)"></i></button>` : ''}
+            ${A.rol !== 'izleyici' && o.durum === 'basarili' ? html`<button class="ikon-dugme" data-eylem="mail" data-id="${o.id}" title="Makbuzu e-posta gönder"><i class="fa-solid fa-envelope"></i></button>` : ''}
+            ${A.rol === 'super' && o.durum === 'basarili' ? html`<button class="ikon-dugme" data-eylem="iade" data-id="${o.id}" title="İade işaretle"><i class="fa-solid fa-rotate-left"></i></button>` : ''}
+          </td></tr>`) : html`<tr><td colspan="8">${bos({ baslik: 'Ödeme yok', ikon: 'fa-receipt' })}</td></tr>`}</tbody>
+      </table></div>
+    </div>`);
+  const uygula = () => { const p = new URLSearchParams(); const q = $('#q').value.trim(); if (q) p.set('q', q); if ($('#fd').value) p.set('durum', $('#fd').value); git('/sadmin/odemeler' + (p.toString() ? '?' + p : '')); };
+  $('#q').addEventListener('input', gecikmeli(uygula, 400)); $('#fd').addEventListener('change', uygula);
+  baglan(kok, {
+    onayla: async (el) => { if (!await onayla({ baslik: 'Ödemeyi onayla', mesaj: 'Bu ödeme onaylanacak, hesap Pro yapılacak ve makbuz gönderilecek. Devam edilsin mi?', dugme: 'Onayla' })) return; await api('POST', `/odemeler/${el.dataset.id}/onayla`); bildir('Ödeme onaylandı, Pro etkinleştirildi'); isle(); },
+    mail: async (el) => { try { const r = await api('POST', `/odemeler/${el.dataset.id}/makbuz-gonder`); bildir(r.mesaj || 'Makbuz gönderildi'); } catch (e) { hataGoster(e); } },
+    iade: async (el) => { if (!await onayla({ mesaj: 'Bu ödeme iade olarak işaretlensin mi?', dugme: 'İade', tehlike: true })) return; await api('POST', `/odemeler/${el.dataset.id}/iade`, {}); bildir('İade işaretlendi'); isle(); },
+  });
+};
+
+SAYFA.saglayicilar = async (kok) => {
+  const d = await api('GET', '/odeme-saglayicilar');
+  const kayitHarita = {}; d.saglayicilar.forEach(s => { kayitHarita[s.anahtar] = s; });
+  yerlestir(kok, html`${sayfaBaslik({ baslik: 'Ödeme yöntemleri', alt: 'Bir yöntem ekleyip anahtarlarını girin; aktif edince kullanıcılar bununla ödeme yapar' })}
+    <div class="saglayici-izgara">
+      ${d.tipler.map(t => { const k = kayitHarita[t.anahtar]; const kurulu = !!k; const aktif = k && k.aktif; return html`<div class="kart saglayici-kart ${aktif ? 'aktif' : ''}">
+        <div class="sk-ust"><div class="sk-ad"><b>${k ? k.ad : t.ad}</b>${aktif ? html`<span class="rozet rozet-basari">Aktif</span>` : kurulu ? html`<span class="rozet rozet-notr">Pasif</span>` : html`<span class="rozet rozet-uyari">Kurulu değil</span>`}${k && k.test_modu ? html`<span class="rozet rozet-uyari">Test</span>` : ''}</div></div>
+        <p class="soluk sk-ac">${t.aciklama}</p>
+        ${A.rol === 'super' ? html`<div class="sk-eylem">
+          <button class="dugme kucuk ${kurulu ? '' : 'birincil'}" data-eylem="duzenle" data-anahtar="${t.anahtar}">${kurulu ? 'Düzenle' : 'Ekle'}</button>
+          ${kurulu ? html`<button class="dugme kucuk" data-eylem="toggle" data-anahtar="${t.anahtar}" data-aktif="${aktif ? 0 : 1}">${aktif ? 'Pasifleştir' : 'Aktifleştir'}</button>
+          <button class="ikon-dugme" data-eylem="sil" data-anahtar="${t.anahtar}" title="Sil"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+        </div>` : ''}
+      </div>`; })}
+    </div>`);
+  baglan(kok, {
+    duzenle: (el) => { const t = d.tipler.find(x => x.anahtar === el.dataset.anahtar); saglayiciModal(t, kayitHarita[t.anahtar], () => isle()); },
+    toggle: async (el) => { const t = d.tipler.find(x => x.anahtar === el.dataset.anahtar); const k = kayitHarita[t.anahtar]; await api('POST', '/odeme-saglayicilar', { anahtar: t.anahtar, ad: k.ad, aktif: el.dataset.aktif === '1', test_modu: k.test_modu, cfg: {} }); bildir(el.dataset.aktif === '1' ? 'Aktifleştirildi' : 'Pasifleştirildi'); isle(); },
+    sil: async (el) => { if (!await onayla({ mesaj: 'Bu ödeme yöntemi silinsin mi?', dugme: 'Sil', tehlike: true })) return; await api('DELETE', '/odeme-saglayicilar/' + el.dataset.anahtar); bildir('Silindi'); isle(); },
+  });
+};
+function saglayiciModal(tip, kayit, sonra) {
+  const cfg = (kayit && kayit.cfg) || {};
+  const m = modal({ baslik: tip.ad, genis: true, icerik: html`<p class="soluk">${tip.aciklama}</p>
+    <form id="sg-form" class="form-izgara">
+      ${alan({ ad: 'ad', etiket: 'Görünen ad', deger: (kayit && kayit.ad) || tip.ad, tam: true })}
+      ${tip.alanlar.map(a => alan({ ad: 'cfg_' + a.ad, etiket: a.etiket + (a.zorunlu ? '' : ' (opsiyonel)'), tip: a.tip === 'sifre' ? 'password' : a.tip === 'uzun' ? 'textarea' : 'text', deger: a.tip === 'sifre' ? '' : (cfg[a.ad] || ''), yardim: a.yardim || (a.tip === 'sifre' && cfg[a.ad] === '••••••' ? 'Kayıtlı — değiştirmek için yeniden girin' : ''), tam: a.tip === 'uzun' }))}
+      <label class="onay-kutusu tam"><input type="checkbox" name="test_modu" ${(kayit ? kayit.test_modu : tip.gercek ? false : true) ? 'checked' : ''}><span>Test modu (gerçek para çekilmez)</span></label>
+      <label class="onay-kutusu tam"><input type="checkbox" name="aktif" ${(kayit && kayit.aktif) ? 'checked' : ''}><span>Aktif — kullanıcılar bu yöntemle ödeyebilsin</span></label>
+    </form>`, altlik: html`<button class="dugme" data-kapat>Vazgeç</button><button class="dugme birincil" type="submit" form="sg-form">Kaydet</button>` });
+  formGonder($('#sg-form', m.el), async (v) => {
+    const cfgObj = {}; tip.alanlar.forEach(a => { const d = v['cfg_' + a.ad]; if (d) cfgObj[a.ad] = d; });
+    await api('POST', '/odeme-saglayicilar', { anahtar: tip.anahtar, ad: v.ad, aktif: !!v.aktif, test_modu: !!v.test_modu, cfg: cfgObj });
+    m.kapat(); bildir('Kaydedildi'); sonra();
+  });
+}
+
+SAYFA.abonelikAyar = async (kok) => {
+  const a = await api('GET', '/abonelik-ayarlari');
+  const l = a.demo_limitleri, oz = l.ozellikler || {};
+  const OZ = [['excel', 'Excel dışa aktarma'], ['pdf', 'PDF çıktı'], ['sms', 'Toplu SMS'], ['yedek', 'Yedekleme'], ['medya', 'Medya yükleme'], ['toplu_islem', 'Toplu işlemler'], ['kayitli_gorunum', 'Kayıtlı görünümler'], ['api', 'API erişimi']];
+  const salt = A.rol !== 'super';
+  yerlestir(kok, html`${sayfaBaslik({ baslik: 'Plan ve demo ayarları', alt: 'Fiyatlandırma, ücretsiz deneme ve demo kısıtlamaları' })}
+    <form id="ay-form">
+    <div class="kart"><div class="kart-baslik"><h2><i class="fa-solid fa-toggle-on"></i> Genel</h2></div>
+      <div class="form-izgara">
+        <label class="onay-kutusu tam"><input type="checkbox" name="abonelik_aktif" ${a.abonelik_aktif ? 'checked' : ''}><span>Abonelik sistemi açık (kapatılırsa herkes tam erişime sahip olur)</span></label>
+        ${alan({ ad: 'deneme_gun', etiket: 'Ücretsiz deneme süresi (gün)', tip: 'number', deger: a.deneme_gun, yardim: '0 = kayıttan itibaren hemen demo kısıtı' })}
+        ${alan({ ad: 'pro_para_birimi', etiket: 'Para birimi', tip: 'select', deger: a.pro_para_birimi, secenekler: [['TRY', 'TRY ₺'], ['USD', 'USD $'], ['EUR', 'EUR €']] })}
+        ${alan({ ad: 'pro_fiyat_aylik', etiket: 'Aylık Pro ücreti', tip: 'number', deger: a.pro_fiyat_aylik })}
+        ${alan({ ad: 'pro_fiyat_yillik', etiket: 'Yıllık Pro ücreti', tip: 'number', deger: a.pro_fiyat_yillik })}
+      </div>
+    </div>
+    <div class="kart"><div class="kart-baslik"><h2><i class="fa-solid fa-lock"></i> Demo kısıtlamaları</h2></div>
+      <div class="form-izgara">
+        ${alan({ ad: 'toplam_kayit', etiket: 'Toplam kayıt sınırı', tip: 'number', deger: l.toplam_kayit, yardim: '0 = sınırsız' })}
+        ${alan({ ad: 'kullanici', etiket: 'Kullanıcı sınırı', tip: 'number', deger: l.kullanici })}
+        ${alan({ ad: 'medya_mb', etiket: 'Medya deposu (MB)', tip: 'number', deger: l.medya_mb })}
+      </div>
+      <h4 style="margin:16px 0 8px">Demoda açık özellikler</h4>
+      <div class="ozellik-izgara">${OZ.map(([k, ad]) => html`<label class="onay-kutusu"><input type="checkbox" data-oz="${k}" ${oz[k] ? 'checked' : ''}><span>${ad}</span></label>`)}</div>
+      <h4 style="margin:16px 0 8px">Demoda tamamen kapalı modüller</h4>
+      <div class="ozellik-izgara">${a.moduller.map(m => html`<label class="onay-kutusu"><input type="checkbox" data-kapali="${m.anahtar}" ${(l.kapali_moduller || []).includes(m.anahtar) ? 'checked' : ''}><span>${m.ad}</span></label>`)}</div>
+      <h4 style="margin:16px 0 8px">Modül başına kayıt sınırı <small class="soluk">(boş = toplam sınır geçerli)</small></h4>
+      <div class="form-izgara mod-limit">${a.moduller.map(m => alan({ ad: 'ml_' + m.anahtar, etiket: m.ad, tip: 'number', deger: (l.moduller && l.moduller[m.anahtar] != null) ? l.moduller[m.anahtar] : '' }))}</div>
+    </div>
+    <div class="kart"><div class="kart-baslik"><h2><i class="fa-solid fa-envelope"></i> Makbuz e-postası (SMTP)</h2></div>
+      <div class="form-izgara">
+        ${alan({ ad: 'smtp_host', etiket: 'SMTP sunucu', deger: a.smtp.host, yer: 'smtp.gmail.com' })}
+        ${alan({ ad: 'smtp_port', etiket: 'Port', tip: 'number', deger: a.smtp.port })}
+        ${alan({ ad: 'smtp_guvenli', etiket: 'Güvenlik', tip: 'select', deger: a.smtp.guvenli, secenekler: [['starttls', 'STARTTLS (587)'], ['ssl', 'SSL (465)'], ['yok', 'Yok']] })}
+        ${alan({ ad: 'smtp_kullanici', etiket: 'Kullanıcı', deger: a.smtp.kullanici })}
+        ${alan({ ad: 'smtp_sifre', etiket: 'Şifre', tip: 'password', yer: a.smtp.sifre_var ? '•••••• (kayıtlı)' : '', yardim: a.smtp.sifre_var ? 'Değiştirmek için yeniden girin' : '' })}
+        ${alan({ ad: 'smtp_gonderen', etiket: 'Gönderen e-posta', tip: 'email', deger: a.smtp.gonderen })}
+        ${alan({ ad: 'smtp_gonderen_ad', etiket: 'Gönderen adı', deger: a.smtp.gonderen_ad })}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center"><input id="test-eposta" type="email" placeholder="test@eposta.com" style="max-width:240px"><button type="button" class="dugme" id="smtp-test">Test e-postası gönder</button></div>
+    </div>
+    <div class="kart"><div class="kart-baslik"><h2><i class="fa-solid fa-file-invoice"></i> Makbuz / kurum bilgileri</h2></div>
+      <div class="form-izgara">
+        ${alan({ ad: 'kurum_ad', etiket: 'Kurum unvanı', deger: a.fatura.kurum_ad })}
+        ${alan({ ad: 'kurum_vergi', etiket: 'Vergi no', deger: a.fatura.vergi })}
+        ${alan({ ad: 'kurum_adres', etiket: 'Adres', deger: a.fatura.adres, tam: true })}
+        ${alan({ ad: 'kurum_iban', etiket: 'IBAN', deger: a.fatura.iban })}
+        ${alan({ ad: 'kurum_telefon', etiket: 'Telefon', deger: a.fatura.telefon })}
+        ${alan({ ad: 'kurum_eposta', etiket: 'E-posta', tip: 'email', deger: a.fatura.eposta })}
+        ${alan({ ad: 'kdv_orani', etiket: 'KDV oranı (%)', tip: 'number', deger: a.fatura.kdv_orani })}
+      </div>
+    </div>
+    ${!salt ? html`<div class="form-eylem"><button class="dugme birincil buyuk" type="submit"><i class="fa-solid fa-floppy-disk"></i> Tüm ayarları kaydet</button></div>` : html`<p class="soluk">Değişiklik için süper yönetici yetkisi gerekir.</p>`}
+    </form>`);
+  if (!salt) formGonder($('#ay-form'), async (v) => {
+    const oza = {}; $$('[data-oz]', kok).forEach(c => { oza[c.dataset.oz] = c.checked; });
+    const kapali = $$('[data-kapali]', kok).filter(c => c.checked).map(c => c.dataset.kapali);
+    const modLimit = {}; a.moduller.forEach(m => { const el = kok.querySelector('[name=ml_' + m.anahtar + ']'); if (el && el.value !== '') modLimit[m.anahtar] = +el.value; });
+    const govde = {
+      abonelik_aktif: !!v.abonelik_aktif, deneme_gun: +v.deneme_gun, pro_para_birimi: v.pro_para_birimi,
+      pro_fiyat_aylik: +v.pro_fiyat_aylik, pro_fiyat_yillik: +v.pro_fiyat_yillik,
+      demo_limitleri: { toplam_kayit: +v.toplam_kayit, kullanici: +v.kullanici, medya_mb: +v.medya_mb, ozellikler: oza, kapali_moduller: kapali, moduller: modLimit },
+      smtp: { host: v.smtp_host, port: +v.smtp_port, guvenli: v.smtp_guvenli, kullanici: v.smtp_kullanici, gonderen: v.smtp_gonderen, gonderen_ad: v.smtp_gonderen_ad, ...(v.smtp_sifre ? { sifre: v.smtp_sifre } : {}) },
+      fatura: { kurum_ad: v.kurum_ad, vergi: v.kurum_vergi, adres: v.kurum_adres, iban: v.kurum_iban, telefon: v.kurum_telefon, eposta: v.kurum_eposta, kdv_orani: +v.kdv_orani },
+    };
+    await api('PUT', '/abonelik-ayarlari', govde); bildir('Ayarlar kaydedildi');
+  });
+  const tb = $('#smtp-test'); if (tb) tb.addEventListener('click', async () => {
+    const e = $('#test-eposta').value.trim(); if (!e) return bildir('Test e-postası girin', 'uyari');
+    tb.disabled = true; try { const r = await api('POST', '/smtp-test', { eposta: e }); bildir(r.mesaj || 'Gönderildi'); } catch (er) { hataGoster(er); } finally { tb.disabled = false; }
+  });
+};
 function csvIndir(ad, basliklar, satirlar) {
   const k = (v) => { let s = String(v ?? ''); if (/^[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
   dosyaKaydet(new Blob(['﻿' + [basliklar, ...satirlar].map(r => r.map(k).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }), ad);

@@ -42,6 +42,7 @@ function kayitKasa(req, k, p) {
 module.exports = function (app) {
   const r = app.yonlendirici('/api/personel');
   r.use(O.kullaniciGerekli); r.use(O.yazmaYetkisi); r.use(O.rolGerekli('muhasebe'));
+  r.use(require('../lib/abonelik').katman);
 
   r.get('/', (req) => {
     const l = db().prepare('SELECT id, ad, soyad, pozisyon, departman, telefon, aktif, ise_baslama, maas, fotograf FROM personeller WHERE hesap_id=? ORDER BY aktif DESC, ad').all(req.hesapId);

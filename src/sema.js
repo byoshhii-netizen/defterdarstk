@@ -233,6 +233,54 @@ CREATE TABLE IF NOT EXISTS medya (
   depolama TEXT DEFAULT 'yerel', yol TEXT, public_id TEXT, url TEXT, klasor TEXT DEFAULT 'genel',
   bagli_tur TEXT, bagli_id INTEGER, olusturma TEXT DEFAULT (datetime('now'))
 );
+
+-- ─── ABONELİK, ÖDEME VE LİSANSLAMA ───
+-- Her kurum hesabının tek bir abonelik satırı olur: kayıt olunca 'deneme' (demo) ile başlar.
+CREATE TABLE IF NOT EXISTS abonelikler (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  hesap_id INTEGER NOT NULL REFERENCES hesaplar(id) ON DELETE CASCADE,
+  plan TEXT NOT NULL DEFAULT 'demo',            -- demo | pro
+  durum TEXT NOT NULL DEFAULT 'deneme',          -- deneme | aktif | odeme_bekliyor | gecikti | iptal | bitti
+  periyot TEXT DEFAULT 'aylik',                  -- aylik | yillik
+  tutar REAL DEFAULT 0, para_birimi TEXT DEFAULT 'TRY',
+  baslangic TEXT, deneme_bitis TEXT,             -- deneme süresi bitişi (YYYY-MM-DD)
+  donem_bitis TEXT,                              -- içinde bulunulan ödeme döneminin bitişi
+  sonraki_odeme TEXT,                            -- bir sonraki otomatik tahsilat tarihi (YYYY-MM-DD)
+  saglayici TEXT,                                -- ödeme sağlayıcı anahtarı (iyzico, stripe, test...)
+  saglayici_ref TEXT,                            -- sağlayıcıdaki müşteri/abonelik/kart saklama referansı
+  odeme_ozet TEXT,                               -- "Visa •••• 4242" gibi gösterim
+  iptal_tarihi TEXT, iptal_eden TEXT,
+  otomatik_yenile INTEGER DEFAULT 1,
+  olusturma TEXT DEFAULT (datetime('now')), guncelleme TEXT DEFAULT (datetime('now')),
+  UNIQUE(hesap_id)
+);
+CREATE INDEX IF NOT EXISTS ix_abonelik_hesap ON abonelikler(hesap_id);
+
+-- Her tahsilat/fatura bir ödeme satırıdır. Makbuz buradan üretilir.
+CREATE TABLE IF NOT EXISTS odemeler (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  hesap_id INTEGER NOT NULL REFERENCES hesaplar(id) ON DELETE CASCADE,
+  abonelik_id INTEGER,
+  makbuz_no TEXT, tarih TEXT DEFAULT (datetime('now')), donem TEXT,  -- donem: YYYY-MM
+  tutar REAL NOT NULL DEFAULT 0, para_birimi TEXT DEFAULT 'TRY',
+  durum TEXT NOT NULL DEFAULT 'bekliyor',        -- bekliyor | basarili | basarisiz | iade
+  plan TEXT DEFAULT 'pro', periyot TEXT DEFAULT 'aylik',
+  saglayici TEXT, saglayici_islem_no TEXT, kart_ozet TEXT,
+  aciklama TEXT, hata_mesaji TEXT, mail_gonderildi INTEGER DEFAULT 0,
+  olusturma TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS ix_odeme_hesap ON odemeler(hesap_id, id);
+
+-- Ödeme sağlayıcıları: yöneticinin eklediği API yapılandırmaları (anahtarlar şifreli saklanır).
+CREATE TABLE IF NOT EXISTS odeme_saglayicilar (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  anahtar TEXT NOT NULL,                          -- tip: iyzico | stripe | paytr | test | manuel
+  ad TEXT NOT NULL, aktif INTEGER DEFAULT 0, test_modu INTEGER DEFAULT 1,
+  yapilandirma TEXT DEFAULT '{}',                 -- şifreli JSON (API anahtarları)
+  sira INTEGER DEFAULT 0, aciklama TEXT,
+  olusturma TEXT DEFAULT (datetime('now')), guncelleme TEXT DEFAULT (datetime('now')),
+  UNIQUE(anahtar)
+);
 `;
 
 // ─── Şema uygulama ve onarım ───────────────────────────────────────────────
@@ -391,6 +439,30 @@ function uygula(db) {
     ['sistem_modu', 'acik'], ['sistem_notu', ''], ['kayit_acik', '1'], ['site_adi', 'Defterdar'],
     ['oturum_suresi_saat', '12'], ['admin_oturum_dakika', '60'], ['oto_yedek_aktif', '1'], ['oto_yedek_saat', '6'],
     ['oto_yedek_sakla', '30'], ['izinli_ipler', ''], ['admin_izinli_ipler', ''], ['devre_disi_moduller', '[]'],
+    // ─── Abonelik / ödeme ayarları ───
+    ['abonelik_aktif', '1'],              // demo/pro sistemi açık mı
+    ['deneme_gun', '14'],                 // yeni kayıtların ücretsiz deneme süresi (gün)
+    ['pro_fiyat_aylik', '499'],           // aylık Pro ücreti
+    ['pro_fiyat_yillik', '4990'],         // yıllık Pro ücreti (2 ay bedava)
+    ['pro_para_birimi', 'TRY'],
+    ['abonelik_zorla', '1'],              // deneme bitince demo kısıtlamaları uygulansın mı
+    // Demo kısıtlamaları (yöneticiden ayarlanır). Boşsa makul varsayılanlar kullanılır.
+    ['demo_limitleri', JSON.stringify({
+      toplam_kayit: 25,                   // demo'da tüm modüllerde toplam kayıt üst sınırı (0 = sınırsız)
+      kullanici: 1,                       // demo'da ek kullanıcı sayısı
+      medya_mb: 20,                       // demo medya deposu sınırı (MB)
+      moduller: {},                       // { kurban: 5, bagislar: 10 } gibi modül başı kayıt sınırı
+      kapali_moduller: [],                // demo'da tamamen kapalı modüller
+      ozellikler: {                       // demo'da kapalı özellikler (true = açık)
+        excel: false, pdf: true, sms: false, yedek: false, medya: true,
+        toplu_islem: false, kayitli_gorunum: true, api: false,
+      },
+    })],
+    // SMTP (makbuz e-postaları için)
+    ['smtp_host', ''], ['smtp_port', '587'], ['smtp_guvenli', 'starttls'],
+    ['smtp_kullanici', ''], ['smtp_sifre', ''], ['smtp_gonderen', ''], ['smtp_gonderen_ad', 'Defterdar'],
+    ['fatura_kurum_ad', 'Defterdar'], ['fatura_kurum_adres', ''], ['fatura_kurum_vergi', ''],
+    ['fatura_kurum_iban', ''], ['fatura_kurum_telefon', ''], ['fatura_kurum_eposta', ''], ['fatura_kdv_orani', '20'],
   ].forEach(([a, d]) => ayar.run(a, d));
 
   // İlk yönetici: şifre kaynak kodda açık metin olarak tutulmaz.

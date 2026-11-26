@@ -48,7 +48,9 @@ async function olustur() {
   require('./src/routes/rapor')(app);
   require('./src/routes/personel')(app);
   require('./src/routes/sistem')(app);
+  require('./src/routes/abonelik')(app);
   require('./src/routes/sadmin')(app);
+  require('./src/routes/sadminOdeme')(app);
 
   const sayfa = app.yonlendirici('');
   sayfa.get('/saglik', (req, res) => {
@@ -79,6 +81,7 @@ function zamanlayici() {
   const { db } = require('./src/lib/db');
   const O = require('./src/lib/oturum');
   let sonYedekGunu = null;
+  let sonTahsilatGunu = null;
   const tik = () => {
     try {
       db().prepare('DELETE FROM oturumlar WHERE bitis<?').run(Date.now());
@@ -90,6 +93,11 @@ function zamanlayici() {
         sonYedekGunu = gun;
         const ad = require('./src/routes/sadmin').otoYedekAl('otomatik');
         console.log('[YEDEK] Otomatik yedek alındı:', ad);
+      }
+      // Günde bir kez: süresi dolan Pro aboneliklerini otomatik tahsil et / demoya düşür
+      if (sonTahsilatGunu !== gun) {
+        sonTahsilatGunu = gun;
+        try { require('./src/routes/abonelik').otomatikTahsilat(); } catch (e) { console.error('[TAHSILAT]', e.message); }
       }
     } catch (e) { console.error('[ZAMANLAYICI]', e.message); }
   };

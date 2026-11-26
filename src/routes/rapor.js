@@ -56,6 +56,7 @@ function yaklasanlar(hesapId, gun = 30) {
 module.exports = function (app) {
   const r = app.yonlendirici('/api');
   r.use(O.kullaniciGerekli);
+  r.use(require('../lib/abonelik').katman);
 
   r.get('/panel', (req) => {
     const h = req.hesapId, ay = buAy();

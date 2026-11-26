@@ -15,6 +15,7 @@ const MEDYA_KLASOR = path.join(VERI_KLASORU, 'medya');
 module.exports = function (app) {
   const r = app.yonlendirici('/api');
   r.use(O.kullaniciGerekli); r.use(O.yazmaYetkisi);
+  r.use(require('../lib/abonelik').katman);
   const yonetici = O.rolGerekli('yonetici');
 
   // ─── Hesap / kurum ayarları ───
@@ -104,6 +105,8 @@ module.exports = function (app) {
     const b = req.body;
     const ad = g.metin(b.ad_soyad, 100), eposta = g.eposta(b.eposta);
     if (!ad || !eposta) throw hata(400, 'Ad soyad ve geçerli e-posta gerekli');
+    const ke = require('../lib/abonelik').kullaniciEklenebilir(req.hesapId);
+    if (!ke.izin) throw hata(402, ke.neden, { yukseltme: true, demo: true });
     const rol = ['yonetici', 'muhasebe', 'personel', 'izleyici'].includes(b.rol) ? b.rol : 'personel';
     if (rol === 'yonetici' && req.kullanici.rol !== 'sahip') throw hata(403, 'Yönetici rolünü yalnızca hesap sahibi verebilir');
     const lim = db().prepare('SELECT kullanici_limiti FROM hesaplar WHERE id=?').get(req.hesapId).kullanici_limiti;

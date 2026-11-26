@@ -147,6 +147,7 @@ function hepsi(hesapId, modul) {
 module.exports = function (app) {
   const r = app.yonlendirici('/api/kayit');
   r.use(O.kullaniciGerekli); r.use(O.yazmaYetkisi);
+  r.use(require('../lib/abonelik').katman);
 
   r.get('/:modul', (req) => {
     const t = tanim(req.params.modul);
@@ -287,7 +288,7 @@ module.exports = function (app) {
 
   // ─── Kayıtlı görünümler (NetSuite "saved search" benzeri) ───
   const gv = app.yonlendirici('/api/gorunumler');
-  gv.use(O.kullaniciGerekli);
+  gv.use(O.kullaniciGerekli); gv.use(require('../lib/abonelik').katman);
   gv.get('/:modul', (req) => db().prepare('SELECT id, ad, filtre_json FROM kayitli_gorunumler WHERE hesap_id=? AND modul=? AND (kullanici_id IS NULL OR kullanici_id=?) ORDER BY ad')
     .all(req.hesapId, req.params.modul, req.kullanici.id).map(x => ({ id: x.id, ad: x.ad, filtre: JSON.parse(x.filtre_json) })));
   gv.post('/:modul', (req) => {
